@@ -85,8 +85,7 @@ export async function fetchOrgs() {
   const { data, error } = await supabase
     .from('organizations')
     .select(ORG_SELECT)
-    .order('created_date', { ascending: false })
-    .limit(1000)
+    .order('name', { ascending: true })
   if (error) throw error
   return (data ?? []).map(transformOrg)
 }
