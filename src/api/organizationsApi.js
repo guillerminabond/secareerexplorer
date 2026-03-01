@@ -86,7 +86,7 @@ export async function fetchOrgs() {
     .from('organizations')
     .select(ORG_SELECT)
     .order('created_date', { ascending: false })
-    .limit(200)
+    .limit(1000)
   if (error) throw error
   return (data ?? []).map(transformOrg)
 }
