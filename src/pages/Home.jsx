@@ -47,6 +47,24 @@ const GENERAL_RESOURCES = [
   tips: ["Subscribe for weekly curated opportunities", "Filter for impact-focused startup roles", "Share with your SE study group"],
   url: "https://alirohde.substack.com",
   cta: "Visit Ali Rohde — Jobs for Startups"
+},
+{
+  emoji: "✅",
+  title: "B Corp Directory",
+  subtitle: "B Corporation Database",
+  desc: "Searchable directory of all certified B Corporations worldwide — businesses meeting high standards of social and environmental performance.",
+  tips: ["Filter by industry, location, and impact area", "Research B Corps before applying", "Identify mission-aligned employers beyond traditional nonprofits"],
+  url: "https://www.bcorporation.net/en-us/find-a-b-corp/",
+  cta: "Visit B Corp Directory"
+},
+{
+  emoji: "💼",
+  title: "Fast Forward Job Board",
+  subtitle: "Tech Nonprofit Jobs",
+  desc: "Job board from Fast Forward, the accelerator for tech nonprofits. Roles at high-growth organizations using technology to drive social change.",
+  tips: ["Filter by role type and cause area", "Find engineering, product, and ops roles at nonprofits", "Great for candidates at the tech-impact intersection"],
+  url: "https://jobs.ffwd.org/jobs",
+  cta: "Visit Fast Forward Job Board"
 }];
 
 const HBS_RESOURCES = [
