@@ -58,7 +58,10 @@ const HBS_RESOURCES = [
 { title: "Education Club", url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/education-club", desc: "HBS student club for MBAs pursuing careers in education." },
 { title: "CPD Career Resources", url: "https://www.hbs.edu/careers/", desc: "HBS Career & Professional Development tools and employer database." },
 { title: "HBS Summer Fellows Program", url: "https://www.hbs.edu/socialenterprise/mba-experience/careers/summer-fellowships", desc: "Funding for MBAs pursuing summer internships in the nonprofit and public sectors." },
-{ title: "Leadership Fellows Program", url: "https://www.hbs.edu/socialenterprise/for-organizations/leadership-fellows/past-partners-fellows", desc: "Post-MBA fellowship placing HBS graduates in senior leadership roles at nonprofits." }];
+{ title: "Leadership Fellows Program", url: "https://www.hbs.edu/socialenterprise/for-organizations/leadership-fellows/past-partners-fellows", desc: "Post-MBA fellowship placing HBS graduates in senior leadership roles at nonprofits." },
+{ title: "HBS Alumni Directory", url: "https://www.alumni.hbs.edu/community/Pages/directory.aspx", desc: "Search and connect with HBS alumni by industry, role, and location." },
+{ title: "12Twenty Mentorships", url: "https://mba-business-harvard.12twenty.com/mentorships/home", desc: "HBS platform to find and request mentorship from alumni across sectors." },
+{ title: "SE Faculty & Research", url: "https://www.hbs.edu/socialenterprise/faculty-research", desc: "HBS Social Enterprise Initiative faculty profiles and latest research." }];
 
 export default function Home() {
   const [tab, setTab] = useState("Explore");
