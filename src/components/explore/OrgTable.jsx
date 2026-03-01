@@ -1,5 +1,5 @@
-import React from "react";
-import { ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
+import React, { useState } from "react";
+import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2 } from "lucide-react";
 
 function TagList({ items, colorClass = "bg-crimson/10 text-crimson" }) {
   if (!items?.length) return null;
@@ -15,7 +15,37 @@ function TagList({ items, colorClass = "bg-crimson/10 text-crimson" }) {
   );
 }
 
-export default function OrgTable({ orgs, savedIds, onSave, onRowClick }) {
+function DeleteCell({ orgId, onDelete }) {
+  const [confirming, setConfirming] = useState(false);
+  return confirming ? (
+    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+      <button
+        onClick={() => onDelete(orgId)}
+        className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600"
+      >
+        Confirm
+      </button>
+      <button
+        onClick={() => setConfirming(false)}
+        className="px-2 py-1 text-xs font-medium border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <button
+      onClick={e => { e.stopPropagation(); setConfirming(true); }}
+      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+      title="Delete"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
+export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, onDelete }) {
+  const hasAdminCols = onEdit || onDelete;
+
   return (
     <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
       <table className="w-full text-sm">
@@ -27,6 +57,7 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick }) {
             <th className="text-left px-4 py-3">Cause Areas</th>
             <th className="text-left px-4 py-3">Regions</th>
             <th className="text-left px-4 py-3 w-8"></th>
+            {hasAdminCols && <th className="text-left px-4 py-3 w-24"></th>}
           </tr>
         </thead>
         <tbody>
@@ -76,6 +107,22 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick }) {
                   </a>
                 )}
               </td>
+              {hasAdminCols && (
+                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-1">
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(org)}
+                        className="p-1.5 text-gray-300 hover:text-crimson hover:bg-crimson/5 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {onDelete && <DeleteCell orgId={org.id} onDelete={onDelete} />}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

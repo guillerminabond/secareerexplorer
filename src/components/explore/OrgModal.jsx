@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ExternalLink } from "lucide-react";
+import { X, ExternalLink, Pencil } from "lucide-react";
 
 const Section = ({ label, value }) => {
   if (!value) return null;
@@ -25,7 +25,7 @@ const Tags = ({ label, items }) => {
   );
 };
 
-export default function OrgModal({ org, onClose }) {
+export default function OrgModal({ org, onClose, onEdit }) {
   if (!org) return null;
 
   return (
@@ -36,13 +36,23 @@ export default function OrgModal({ org, onClose }) {
       >
         <div className="p-6">
           <div className="flex items-start justify-between mb-4">
-            <div>
+            <div className="flex-1 min-w-0 mr-4">
               <h2 className="text-xl font-bold text-gray-900">{org.name}</h2>
               <p className="text-sm text-gray-500">{org.org_type}</p>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 ml-4 flex-shrink-0">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {onEdit && (
+                <button
+                  onClick={() => { onClose(); onEdit(org); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-crimson border border-crimson/30 rounded-lg hover:bg-crimson/5 transition-colors"
+                >
+                  <Pencil className="w-3 h-3" /> Edit
+                </button>
+              )}
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">

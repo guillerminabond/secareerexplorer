@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { fetchOrgs } from "@/api/organizationsApi";
+import { fetchOrgs, createOrg, updateOrg, deleteOrg } from "@/api/organizationsApi";
 import FilterBar from "@/components/explore/FilterBar";
 import OrgCard from "@/components/explore/OrgCard";
 import OrgModal from "@/components/explore/OrgModal";
+import OrgForm from "@/components/admin/OrgForm";
 import QuizExplore from "@/components/explore/QuizExplore";
-import { Search, Download, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
+import { Search, Download, SlidersHorizontal, LayoutGrid, List, Lock, Plus, X } from "lucide-react";
 import OrgTable from "@/components/explore/OrgTable";
 import LearnMorePage from "@/components/learnmore/LearnMorePage";
 import OrgDashboard from "@/components/dashboard/OrgDashboard";
+
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
 
 const TABS = ["Explore", "Learn More", "Dashboard", "All Organizations", "Saved Organizations", "Additional Resources"];
 
@@ -81,6 +84,67 @@ const HBS_RESOURCES = [
 { title: "12Twenty Mentorships", url: "https://mba-business-harvard.12twenty.com/mentorships/home", desc: "HBS platform to find and request mentorship from alumni across sectors." },
 { title: "SE Faculty & Research", url: "https://www.hbs.edu/socialenterprise/faculty-research", desc: "HBS Social Enterprise Initiative faculty profiles and latest research." }];
 
+// ── Admin Auth Modal ─────────────────────────────────────────
+function AdminAuthModal({ onSuccess, onClose }) {
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState(false);
+
+  const submit = () => {
+    if (pw === ADMIN_PASSWORD) { onSuccess(); }
+    else { setError(true); setPw(""); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-crimson" />
+            <h2 className="font-semibold text-gray-900">Admin Access</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+        </div>
+        <input
+          type="password"
+          placeholder="Password"
+          value={pw}
+          onChange={e => { setPw(e.target.value); setError(false); }}
+          onKeyDown={e => e.key === "Enter" && submit()}
+          autoFocus
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 mb-2"
+        />
+        {error && <p className="text-xs text-red-500 mb-2">Incorrect password.</p>}
+        <button
+          onClick={submit}
+          className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium hover:bg-crimson/90"
+        >
+          Unlock
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Org Edit Modal (wraps OrgForm) ───────────────────────────
+function OrgEditModal({ org, onSave, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="font-bold text-gray-900 text-lg">
+              {org?.id ? `Edit: ${org.name}` : "Add Organization"}
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+          </div>
+          <OrgForm org={org} onSave={onSave} onCancel={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────
 export default function Home() {
   const [tab, setTab] = useState("Explore");
   const [orgs, setOrgs] = useState([]);
@@ -89,17 +153,24 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [savedIds, setSavedIds] = useState(() => {
-    try {return JSON.parse(localStorage.getItem("hbs_saved_orgs") || "[]");} catch {return [];}
+    try { return JSON.parse(localStorage.getItem("hbs_saved_orgs") || "[]"); } catch { return []; }
   });
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState("table");
 
-  useEffect(() => {
+  // Admin state
+  const [adminMode, setAdminMode] = useState(false);
+  const [showAdminAuth, setShowAdminAuth] = useState(false);
+  const [editingOrg, setEditingOrg] = useState(undefined); // undefined = closed, null = new, obj = edit
+
+  const loadOrgs = () => {
     fetchOrgs()
       .then(data => setOrgs(data))
-      .catch(err => console.error('Error fetching organizations:', err))
+      .catch(err => console.error("Error fetching organizations:", err))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadOrgs(); }, []);
 
   const toggleSave = (id) => {
     setSavedIds((prev) => {
@@ -107,6 +178,27 @@ export default function Home() {
       localStorage.setItem("hbs_saved_orgs", JSON.stringify(next));
       return next;
     });
+  };
+
+  const handleAdminToggle = () => {
+    if (adminMode) { setAdminMode(false); }
+    else { setShowAdminAuth(true); }
+  };
+
+  const handleEdit = (org) => {
+    setSelectedOrg(null); // close detail modal if open
+    setEditingOrg(org);
+  };
+
+  const handleDelete = async (id) => {
+    await deleteOrg(id);
+    setOrgs(prev => prev.filter(o => o.id !== id));
+    if (selectedOrg?.id === id) setSelectedOrg(null);
+  };
+
+  const handleSave = () => {
+    setEditingOrg(undefined);
+    loadOrgs();
   };
 
   const getValuesAsArray = (val) => {
@@ -117,7 +209,7 @@ export default function Home() {
 
   const filtered = orgs.filter((org) => {
     if (search && !org.name?.toLowerCase().includes(search.toLowerCase()) &&
-    !org.description?.toLowerCase().includes(search.toLowerCase())) return false;
+      !org.description?.toLowerCase().includes(search.toLowerCase())) return false;
 
     for (const [key, values] of Object.entries(filters)) {
       if (!values?.length) continue;
@@ -142,10 +234,15 @@ export default function Home() {
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;a.download = "saved_orgs.csv";a.click();
+    a.href = url; a.download = "saved_orgs.csv"; a.click();
   };
 
   const activeFilterCount = Object.values(filters).reduce((n, v) => n + (v?.length || 0), 0);
+
+  // Admin props passed down to components
+  const adminProps = adminMode
+    ? { onEdit: handleEdit, onDelete: handleDelete }
+    : {};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,23 +257,37 @@ export default function Home() {
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 flex gap-2 items-center">
           {TABS.map((t) =>
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              t === tab
-                ? "bg-[#A51C30] text-white shadow-md"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}>
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                t === tab
+                  ? "bg-[#A51C30] text-white shadow-md"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}>
               {t} {t === "Saved Organizations" && savedIds.length > 0 && <span className={`ml-1 text-xs rounded-full px-1.5 py-0.5 ${t === tab ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>{savedIds.length}</span>}
             </button>
           )}
+
+          {/* Admin mode toggle */}
+          <button
+            onClick={handleAdminToggle}
+            className={`ml-auto my-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
+              adminMode
+                ? "bg-amber-50 text-amber-700 border-amber-300"
+                : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
+            }`}
+            title={adminMode ? "Click to exit admin mode" : "Click to enable admin mode"}
+          >
+            <Lock className="w-3 h-3" />
+            {adminMode ? "Admin ●" : "Admin"}
+          </button>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-6">
         {tab === "Explore" &&
-          <QuizExplore orgs={orgs} savedIds={savedIds} onSave={toggleSave} />
+          <QuizExplore orgs={orgs} savedIds={savedIds} onSave={toggleSave} {...adminProps} />
         }
 
         {tab === "Learn More" && <LearnMorePage />}
@@ -184,20 +295,20 @@ export default function Home() {
         {tab === "Dashboard" && <OrgDashboard orgs={orgs} />}
 
         {tab === "All Organizations" &&
-        <div>
+          <div>
             <div className="flex gap-3 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 bg-white"
-                placeholder="Search organizations..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)} />
+                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 bg-white"
+                  placeholder="Search organizations..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)} />
               </div>
               <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
-              showFilters || activeFilterCount > 0 ? "border-crimson text-crimson bg-crimson/5" : "border-gray-200 text-gray-600 bg-white"}`}>
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  showFilters || activeFilterCount > 0 ? "border-crimson text-crimson bg-crimson/5" : "border-gray-200 text-gray-600 bg-white"}`}>
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
               </button>
@@ -209,31 +320,39 @@ export default function Home() {
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
+              {adminMode && (
+                <button
+                  onClick={() => setEditingOrg(null)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-crimson text-white text-sm font-medium hover:bg-crimson/90 transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Add Org
+                </button>
+              )}
             </div>
 
             {showFilters &&
-          <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
                 <FilterBar active={filters} onChange={setFilters} />
               </div>
-          }
+            }
 
             {loading ?
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Array(6).fill(0).map((_, i) =>
-            <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 animate-pulse">
+                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 animate-pulse">
                     <div className="h-4 bg-gray-100 rounded w-3/4 mb-2" />
                     <div className="h-3 bg-gray-50 rounded w-1/2" />
                   </div>
-            )}
+                )}
               </div> :
-          <>
+              <>
                 <p className="text-sm text-gray-500 mb-3">{filtered.length} organization{filtered.length !== 1 ? "s" : ""}</p>
                 {viewMode === "table" ? (
-                  <OrgTable orgs={filtered} savedIds={savedIds} onSave={toggleSave} onRowClick={setSelectedOrg} />
+                  <OrgTable orgs={filtered} savedIds={savedIds} onSave={toggleSave} onRowClick={setSelectedOrg} {...adminProps} />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {filtered.map((org) =>
-                      <OrgCard key={org.id} org={org} saved={savedIds.includes(org.id)} onSave={toggleSave} onClick={() => setSelectedOrg(org)} />
+                      <OrgCard key={org.id} org={org} saved={savedIds.includes(org.id)} onSave={toggleSave} onClick={() => setSelectedOrg(org)} {...adminProps} />
                     )}
                     {filtered.length === 0 &&
                       <div className="col-span-3 text-center py-12 text-gray-400 text-sm">No organizations match your filters.</div>
@@ -241,41 +360,41 @@ export default function Home() {
                   </div>
                 )}
               </>
-          }
+            }
           </div>
         }
 
         {tab === "Saved Organizations" &&
-        <div>
+          <div>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-gray-800">Saved Organizations ({savedOrgs.length})</h2>
               {savedOrgs.length > 0 &&
-            <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:border-crimson hover:text-crimson">
+                <button onClick={exportCSV} className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-600 hover:border-crimson hover:text-crimson">
                   <Download className="w-4 h-4" /> Export CSV
                 </button>
-            }
+              }
             </div>
             {savedOrgs.length === 0 ?
-          <div className="text-center py-16 text-gray-400 text-sm">
+              <div className="text-center py-16 text-gray-400 text-sm">
                 <p>No saved organizations yet.</p>
                 <p className="mt-1">Click the bookmark icon on any org card to save it.</p>
               </div> :
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {savedOrgs.map((org) =>
-            <OrgCard key={org.id} org={org} saved={true} onSave={toggleSave} onClick={() => setSelectedOrg(org)} />
-            )}
+                  <OrgCard key={org.id} org={org} saved={true} onSave={toggleSave} onClick={() => setSelectedOrg(org)} {...adminProps} />
+                )}
               </div>
-          }
+            }
           </div>
         }
 
         {tab === "Additional Resources" &&
-        <div className="space-y-8">
+          <div className="space-y-8">
             <div>
               <h2 className="font-semibold text-gray-800 mb-3">Job Boards & Career Platforms</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {GENERAL_RESOURCES.map((r) =>
-              <div key={r.title} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col gap-3">
+                  <div key={r.title} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col gap-3">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xl">{r.emoji}</span>
@@ -290,15 +409,15 @@ export default function Home() {
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">💡 How to use it</p>
                       <ul className="space-y-1">
                         {r.tips.map((tip) =>
-                    <li key={tip} className="text-xs text-gray-600 flex gap-1.5"><span className="text-gray-400 mt-0.5">•</span>{tip}</li>
-                    )}
+                          <li key={tip} className="text-xs text-gray-600 flex gap-1.5"><span className="text-gray-400 mt-0.5">•</span>{tip}</li>
+                        )}
                       </ul>
                     </div>
                     <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-crimson hover:underline">
                       {r.cta} →
                     </a>
                   </div>
-              )}
+                )}
               </div>
             </div>
 
@@ -306,19 +425,43 @@ export default function Home() {
               <h2 className="font-semibold text-gray-800 mb-3">🎓 HBS-Specific Resources</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {HBS_RESOURCES.map((r) =>
-              <a key={r.title} href={r.url} target="_blank" rel="noopener noreferrer"
-                className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow block group">
+                  <a key={r.title} href={r.url} target="_blank" rel="noopener noreferrer"
+                    className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow block group">
                     <h3 className="font-semibold text-gray-900 text-sm mb-1 group-hover:text-crimson transition-colors">{r.title} →</h3>
                     <p className="text-xs text-gray-500">{r.desc}</p>
                   </a>
-              )}
+                )}
               </div>
             </div>
           </div>
         }
       </div>
 
-      {selectedOrg && <OrgModal org={selectedOrg} onClose={() => setSelectedOrg(null)} />}
+      {/* Org detail modal */}
+      {selectedOrg && (
+        <OrgModal
+          org={selectedOrg}
+          onClose={() => setSelectedOrg(null)}
+          onEdit={adminMode ? handleEdit : undefined}
+        />
+      )}
+
+      {/* Admin auth modal */}
+      {showAdminAuth && (
+        <AdminAuthModal
+          onSuccess={() => { setAdminMode(true); setShowAdminAuth(false); }}
+          onClose={() => setShowAdminAuth(false)}
+        />
+      )}
+
+      {/* Org edit/create modal */}
+      {editingOrg !== undefined && (
+        <OrgEditModal
+          org={editingOrg}
+          onSave={handleSave}
+          onClose={() => setEditingOrg(undefined)}
+        />
+      )}
     </div>
   );
 }
