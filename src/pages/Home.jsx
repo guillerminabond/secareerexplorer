@@ -213,7 +213,7 @@ export default function Home() {
 
     for (const [key, values] of Object.entries(filters)) {
       if (!values?.length) continue;
-      if (key === "org_type" || key === "hiring_status") {
+      if (key === "org_type") {
         const orgVal = org[key] || "";
         const match = values.some(v => orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation")));
         if (!match) return false;
@@ -228,8 +228,8 @@ export default function Home() {
   const savedOrgs = orgs.filter((o) => savedIds.includes(o.id));
 
   const exportCSV = () => {
-    const rows = [["Name", "Type", "Cause Areas", "Hiring Status", "Website"]];
-    savedOrgs.forEach((o) => rows.push([o.name, o.org_type, (o.cause_areas || []).join("; "), o.hiring_status, o.website]));
+    const rows = [["Name", "Type", "Cause Areas", "Website"]];
+    savedOrgs.forEach((o) => rows.push([o.name, o.org_type, (o.cause_areas || []).join("; "), o.website]));
     const csv = rows.map((r) => r.map((c) => `"${(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);

@@ -7,7 +7,6 @@ const FILTERS = {
   role_types: ["Operator", "Funder", "Enabler", "Advocacy & Policy"],
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
   regions: ["Global", "US National", "Northeast", "Southeast", "Midwest", "West", "Africa", "Asia", "Latin America", "Europe"],
-  hiring_status: ["Actively Hiring", "Sometimes Hiring", "Internships Only"]
 };
 
 export default function FilterBar({ active, onChange }) {

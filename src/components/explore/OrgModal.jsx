@@ -58,7 +58,6 @@ export default function OrgModal({ org, onClose, onEdit }) {
           <div className="space-y-4">
             <Section label="About" value={org.description} />
             <Section label="Size" value={org.size} />
-            <Section label="Hiring Status" value={org.hiring_status} />
             <Tags label="Cause Areas" items={org.cause_areas} />
             <Tags label="Role Types" items={org.role_types} />
             <Tags label="Regions" items={org.regions} />

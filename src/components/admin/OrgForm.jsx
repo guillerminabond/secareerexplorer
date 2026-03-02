@@ -29,13 +29,11 @@ const MultiCheck = ({ options, value = [], onChange }) => (
   </div>
 );
 
-const HIRING_OPTIONS = ["Actively Hiring", "Sometimes Hiring", "Internships Only", "Not Currently Hiring"];
-
 export default function OrgForm({ org, onSave, onCancel }) {
   const [form, setForm] = useState(org || {
     name: "", description: "", website: "", org_type: "",
     cause_areas: [], role_types: [], regions: [], target_populations: [],
-    hbs_note: "", notable_alumni: "", hiring_status: "", size: "",
+    hbs_note: "", notable_alumni: "", size: "",
     hq: "", year_established: "", employees: ""
   });
   const [saving, setSaving] = useState(false);
@@ -105,20 +103,12 @@ export default function OrgForm({ org, onSave, onCancel }) {
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Hiring Status">
-          <select className={inputClass} value={form.hiring_status} onChange={e => set("hiring_status", e.target.value)}>
-            <option value="">Select...</option>
-            {HIRING_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </Field>
-        <Field label="Employees">
-          <select className={inputClass} value={form.employees} onChange={e => set("employees", e.target.value)}>
-            <option value="">Select...</option>
-            {lookups.employee_ranges.map(o => <option key={o} value={o}>{o}</option>)}
-          </select>
-        </Field>
-      </div>
+      <Field label="Employees">
+        <select className={inputClass} value={form.employees} onChange={e => set("employees", e.target.value)}>
+          <option value="">Select...</option>
+          {lookups.employee_ranges.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </Field>
 
       <Field label="Cause Areas">
         <MultiCheck options={lookups.cause_areas} value={form.cause_areas} onChange={v => set("cause_areas", v)} />

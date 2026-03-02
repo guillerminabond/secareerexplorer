@@ -109,7 +109,6 @@ export default function Admin() {
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Hiring</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -118,7 +117,6 @@ export default function Admin() {
                   <tr key={org.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{org.name}</td>
                     <td className="px-4 py-3 text-gray-500">{org.org_type}</td>
-                    <td className="px-4 py-3 text-gray-500">{org.hiring_status}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2 justify-end">
                         <button onClick={() => setEditing(org)} className="text-gray-400 hover:text-crimson">
