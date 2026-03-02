@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -10,6 +10,7 @@ const COLORS = [
   "#27ae60", "#2980b9", "#8e44ad", "#16a085", "#2c3e50"
 ];
 
+// ── Helpers ───────────────────────────────────────────────────
 function StatCard({ label, value, sub }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-1">
@@ -41,31 +42,136 @@ function countBy(orgs, key) {
     .sort((a, b) => b.count - a.count);
 }
 
-function CauseRegionMatrix({ orgs }) {
-  const causes = ["Poverty Alleviation", "Economic Development", "Global Health", "Education", "Climate & Energy", "Gender & Social Justice", "Financial Inclusion"];
-  const regions = ["Global", "US National", "Africa", "Asia", "Latin America", "Europe", "Northeast", "Southeast", "Midwest", "West"];
+// ── Nomination status badge ───────────────────────────────────
+function StatusBadge({ status }) {
+  if (status === "approved") return (
+    <span className="inline-flex items-center text-xs font-medium text-green-700 bg-green-50 px-1.5 py-0.5 rounded-full">✓ Approved</span>
+  );
+  if (status === "rejected") return (
+    <span className="inline-flex items-center text-xs font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded-full">✗ Rejected</span>
+  );
+  return (
+    <span className="inline-flex items-center text-xs font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">● Pending</span>
+  );
+}
 
+// ── Nominations queue (admin only) ────────────────────────────
+function NominationsQueue({ nominations, onApprove, onReject }) {
+  const [expanded, setExpanded] = useState(null);
+  const pending = nominations.filter(n => n.status === "pending");
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <SectionTitle>Nominations Queue</SectionTitle>
+        {pending.length > 0 && (
+          <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+            {pending.length} pending
+          </span>
+        )}
+      </div>
+
+      {nominations.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          No nominations yet. They'll appear here when users submit them via the "Nominate an Org" button.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {nominations.map(n => (
+            <div key={n.id} className="border border-gray-100 rounded-lg overflow-hidden">
+              <div
+                className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-gray-50"
+                onClick={() => setExpanded(expanded === n.id ? null : n.id)}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <StatusBadge status={n.status} />
+                  <span className="font-medium text-sm text-gray-900 truncate">{n.name}</span>
+                  {n.org_type && <span className="text-xs text-gray-400 hidden sm:inline">{n.org_type}</span>}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span className="text-xs text-gray-400">{new Date(n.created_at).toLocaleDateString()}</span>
+                  {n.status === "pending" && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={e => { e.stopPropagation(); onApprove(n); }}
+                        className="text-xs bg-green-500 text-white rounded px-2 py-0.5 hover:bg-green-600 transition-colors"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); onReject(n.id); }}
+                        className="text-xs bg-gray-100 text-gray-600 rounded px-2 py-0.5 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {expanded === n.id && (
+                <div className="border-t border-gray-100 px-3 py-2.5 bg-gray-50 space-y-1 text-xs text-gray-600">
+                  {n.website && <p><span className="font-semibold text-gray-500">Website:</span>{" "}
+                    <a href={n.website} target="_blank" rel="noopener noreferrer" className="text-[#A51C30] hover:underline">{n.website}</a>
+                  </p>}
+                  {n.description && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
+                  {n.cause_areas && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
+                  {n.regions && <p><span className="font-semibold text-gray-500">Regions:</span> {n.regions}</p>}
+                  {n.hbs_connection && <p><span className="font-semibold text-gray-500">HBS connection:</span> {n.hbs_connection}</p>}
+                  {n.submitted_by && <p><span className="font-semibold text-gray-500">Submitted by:</span> {n.submitted_by}</p>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Cause × Region matrix (admin only) ───────────────────────
+// US sub-regions are consolidated into "North America"
+const REGION_MAP = {
+  "Global": "Global",
+  "US National": "North America",
+  "Northeast": "North America",
+  "Southeast": "North America",
+  "Midwest": "North America",
+  "West": "North America",
+  "Africa": "Africa",
+  "Europe": "Europe",
+  "Asia": "Asia",
+  "Latin America": "Latin America",
+};
+
+const MATRIX_CAUSES = [
+  "Poverty Alleviation", "Economic Development", "Global Health", "Education",
+  "Climate & Energy", "Gender & Social Justice", "Financial Inclusion",
+  "Housing & Community", "Arts & Culture",
+];
+
+const MATRIX_REGIONS = ["Global", "North America", "Africa", "Europe", "Asia", "Latin America"];
+
+function CauseRegionMatrix({ orgs }) {
   const matrix = useMemo(() => {
     const m = {};
-    causes.forEach((c) => {
+    MATRIX_CAUSES.forEach(c => {
       m[c] = {};
-      regions.forEach((r) => { m[c][r] = 0; });
+      MATRIX_REGIONS.forEach(r => { m[c][r] = 0; });
     });
-    orgs.forEach((org) => {
+    orgs.forEach(org => {
       const orgCauses = splitVals(org.cause_areas);
-      const orgRegions = splitVals(org.regions);
-      orgCauses.forEach((c) => {
+      const orgRegions = splitVals(org.regions).map(r => REGION_MAP[r]).filter(Boolean);
+      const uniqueRegions = [...new Set(orgRegions)];
+      orgCauses.forEach(c => {
         if (m[c]) {
-          orgRegions.forEach((r) => {
-            if (m[c][r] !== undefined) m[c][r]++;
-          });
+          uniqueRegions.forEach(r => { m[c][r]++; });
         }
       });
     });
     return m;
   }, [orgs]);
 
-  const maxVal = Math.max(...causes.flatMap((c) => regions.map((r) => matrix[c][r])));
+  const maxVal = Math.max(1, ...MATRIX_CAUSES.flatMap(c => MATRIX_REGIONS.map(r => matrix[c][r])));
 
   const cellColor = (val) => {
     if (val === 0) return "bg-gray-50 text-gray-300";
@@ -80,17 +186,17 @@ function CauseRegionMatrix({ orgs }) {
       <table className="text-xs w-full border-separate border-spacing-0.5">
         <thead>
           <tr>
-            <th className="text-left text-gray-400 font-medium pb-1 pr-2 min-w-[130px]">Cause \ Region</th>
-            {regions.map((r) => (
+            <th className="text-left text-gray-400 font-medium pb-1 pr-2 min-w-[140px]">Cause \ Region</th>
+            {MATRIX_REGIONS.map(r => (
               <th key={r} className="text-gray-400 font-medium pb-1 px-1 text-center whitespace-nowrap">{r}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {causes.map((c) => (
+          {MATRIX_CAUSES.map(c => (
             <tr key={c}>
               <td className="text-gray-600 font-medium pr-2 py-0.5 whitespace-nowrap">{c}</td>
-              {regions.map((r) => {
+              {MATRIX_REGIONS.map(r => {
                 const val = matrix[c][r];
                 return (
                   <td key={r} className={`text-center rounded font-semibold py-1.5 px-2 ${cellColor(val)}`}>
@@ -112,16 +218,17 @@ function CauseRegionMatrix({ orgs }) {
   );
 }
 
-export default function OrgDashboard({ orgs }) {
+// ── Main component ────────────────────────────────────────────
+export default function OrgDashboard({ orgs, adminMode = false, nominations = [], onApprove, onReject }) {
   const causeData = useMemo(() => countBy(orgs, "cause_areas"), [orgs]);
-  const typeData = useMemo(() => countBy(orgs, "org_type"), [orgs]);
+  const typeData  = useMemo(() => countBy(orgs, "org_type"), [orgs]);
   const regionData = useMemo(() => countBy(orgs, "regions"), [orgs]);
-  const roleData = useMemo(() => countBy(orgs, "role_types"), [orgs]);
-  const popData = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
+  const roleData  = useMemo(() => countBy(orgs, "role_types"), [orgs]);
+  const popData   = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
 
-  const uniqueCauses = useMemo(() => new Set(orgs.flatMap((o) => splitVals(o.cause_areas))).size, [orgs]);
-  const uniqueRegions = useMemo(() => new Set(orgs.flatMap((o) => splitVals(o.regions))).size, [orgs]);
-  const uniqueTypes = useMemo(() => new Set(orgs.map((o) => o.org_type).filter(Boolean)).size, [orgs]);
+  const uniqueCauses  = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.cause_areas))).size, [orgs]);
+  const uniqueRegions = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.regions))).size, [orgs]);
+  const uniqueTypes   = useMemo(() => new Set(orgs.map(o => o.org_type).filter(Boolean)).size, [orgs]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload?.length) {
@@ -137,6 +244,12 @@ export default function OrgDashboard({ orgs }) {
 
   return (
     <div className="space-y-8">
+      {/* ── Admin: Nominations queue ── */}
+      {adminMode && (
+        <NominationsQueue nominations={nominations} onApprove={onApprove} onReject={onReject} />
+      )}
+
+      {/* ── At a Glance ── */}
       <div>
         <SectionTitle>At a Glance</SectionTitle>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -147,6 +260,7 @@ export default function OrgDashboard({ orgs }) {
         </div>
       </div>
 
+      {/* ── Cause Area Breakdown ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Cause Area Breakdown</SectionTitle>
         <ResponsiveContainer width="100%" height={320}>
@@ -159,6 +273,7 @@ export default function OrgDashboard({ orgs }) {
         </ResponsiveContainer>
       </div>
 
+      {/* ── Org Type + Role ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <SectionTitle>Org Type Distribution</SectionTitle>
@@ -187,6 +302,7 @@ export default function OrgDashboard({ orgs }) {
         </div>
       </div>
 
+      {/* ── Regional Coverage ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Regional Coverage</SectionTitle>
         <ResponsiveContainer width="100%" height={220}>
@@ -199,10 +315,11 @@ export default function OrgDashboard({ orgs }) {
         </ResponsiveContainer>
       </div>
 
+      {/* ── Population Focus ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Population Focus</SectionTitle>
         <div className="flex flex-wrap gap-2">
-          {popData.map(({ name, count }, i) => {
+          {popData.map(({ name, count }) => {
             const maxCount = popData[0]?.count || 1;
             const intensity = count / maxCount;
             const size = intensity > 0.7 ? "text-base px-4 py-2" : intensity > 0.4 ? "text-sm px-3 py-1.5" : "text-xs px-2.5 py-1";
@@ -217,11 +334,16 @@ export default function OrgDashboard({ orgs }) {
         </div>
       </div>
 
-      <div className="bg-white border border-gray-100 rounded-xl p-5">
-        <SectionTitle>Cause × Region Coverage Matrix</SectionTitle>
-        <p className="text-xs text-gray-400 mb-4">Green = dense coverage · Red = sparse · Gray = no orgs. Identifies white space opportunities.</p>
-        <CauseRegionMatrix orgs={orgs} />
-      </div>
+      {/* ── Admin: Cause × Region Matrix ── */}
+      {adminMode && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <SectionTitle>Cause × Region Coverage Matrix</SectionTitle>
+          <p className="text-xs text-gray-400 mb-4">
+            Green = dense coverage · Orange = moderate · Red = sparse · Gray = no orgs. US sub-regions consolidated into North America.
+          </p>
+          <CauseRegionMatrix orgs={orgs} />
+        </div>
+      )}
     </div>
   );
 }

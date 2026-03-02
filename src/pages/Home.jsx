@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchOrgs, createOrg, updateOrg, deleteOrg } from "@/api/organizationsApi";
 import { fetchContent, upsertContent } from "@/api/contentApi";
+import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
 import FilterBar from "@/components/explore/FilterBar";
 import OrgCard from "@/components/explore/OrgCard";
 import OrgModal from "@/components/explore/OrgModal";
@@ -8,6 +9,7 @@ import OrgForm from "@/components/admin/OrgForm";
 import QuizExplore from "@/components/explore/QuizExplore";
 import NominateModal from "@/components/NominateModal";
 import { Search, Download, SlidersHorizontal, LayoutGrid, List, Lock, Plus, X, Pencil, Trash2, Lightbulb } from "lucide-react";
+
 import OrgTable from "@/components/explore/OrgTable";
 import LearnMorePage from "@/components/learnmore/LearnMorePage";
 import OrgDashboard from "@/components/dashboard/OrgDashboard";
@@ -256,6 +258,8 @@ export default function Home() {
   const [showAdminAuth, setShowAdminAuth] = useState(false);
   const [editingOrg, setEditingOrg] = useState(undefined); // undefined = closed, null = new, obj = edit
   const [showNominate, setShowNominate] = useState(false);
+  const [nominations, setNominations] = useState([]);
+  const [approvingNomId, setApprovingNomId] = useState(null); // nomination id being approved via OrgForm
 
   // Additional Resources state (loaded from Supabase, fallback to defaults)
   const [generalResources, setGeneralResources] = useState([...DEFAULT_GENERAL_RESOURCES]);
@@ -270,11 +274,20 @@ export default function Home() {
       .finally(() => setLoading(false));
   };
 
+  const loadNominations = () => {
+    fetchNominations().then(setNominations).catch(() => {});
+  };
+
   useEffect(() => {
     loadOrgs();
     fetchContent("general_resources").then(data => { if (data) setGeneralResources(data); }).catch(() => {});
     fetchContent("hbs_resources").then(data => { if (data) setHbsResources(data); }).catch(() => {});
   }, []);
+
+  // Load nominations when admin mode is first activated
+  useEffect(() => {
+    if (adminMode) loadNominations();
+  }, [adminMode]);
 
   const toggleSave = (id) => {
     setSavedIds((prev) => {
@@ -345,7 +358,39 @@ export default function Home() {
     if (selectedOrg?.id === id) setSelectedOrg(null);
   };
 
-  const handleSave = () => {
+  const handleApproveNomination = (nom) => {
+    setSelectedOrg(null);
+    setApprovingNomId(nom.id);
+    setEditingOrg({
+      name: nom.name || "",
+      website: nom.website || "",
+      description: nom.description || "",
+      org_type: nom.org_type || "",
+      cause_areas: nom.cause_areas || "",
+      regions: nom.regions || "",
+      hbs_note: nom.hbs_connection || "",
+    });
+  };
+
+  const handleRejectNomination = async (id) => {
+    try {
+      await updateNominationStatus(id, "rejected");
+    } catch (err) {
+      console.error("Failed to reject nomination:", err);
+    }
+    loadNominations();
+  };
+
+  const handleSave = async () => {
+    if (approvingNomId) {
+      try {
+        await updateNominationStatus(approvingNomId, "approved");
+      } catch (err) {
+        console.error("Failed to mark nomination as approved:", err);
+      }
+      setApprovingNomId(null);
+      loadNominations();
+    }
     setEditingOrg(undefined);
     loadOrgs();
   };
@@ -414,24 +459,20 @@ export default function Home() {
                   ? "bg-[#A51C30] text-white shadow-md"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}>
-              {t} {t === "Saved Organizations" && savedIds.length > 0 && <span className={`ml-1 text-xs rounded-full px-1.5 py-0.5 ${t === tab ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>{savedIds.length}</span>}
+              {t === "Dashboard" && adminMode ? "Admin Dashboard" : t}
+              {t === "Saved Organizations" && savedIds.length > 0 && <span className={`ml-1 text-xs rounded-full px-1.5 py-0.5 ${t === tab ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>{savedIds.length}</span>}
+              {t === "Dashboard" && adminMode && nominations.filter(n => n.status === "pending").length > 0 && (
+                <span className={`ml-1 text-xs rounded-full px-1.5 py-0.5 ${t === tab ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>
+                  {nominations.filter(n => n.status === "pending").length}
+                </span>
+              )}
             </button>
           )}
-
-          {/* Nominate button */}
-          <button
-            onClick={() => setShowNominate(true)}
-            className="ml-auto my-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 border border-gray-200 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-[#A51C30]/5 transition-all"
-            title="Suggest an organization to add"
-          >
-            <Lightbulb className="w-3 h-3" />
-            Nominate an Org
-          </button>
 
           {/* Admin mode toggle */}
           <button
             onClick={handleAdminToggle}
-            className={`my-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
+            className={`ml-auto my-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
               adminMode
                 ? "bg-amber-50 text-amber-700 border-amber-300"
                 : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
@@ -451,7 +492,15 @@ export default function Home() {
 
         {tab === "Learn More" && <LearnMorePage adminMode={adminMode} />}
 
-        {tab === "Dashboard" && <OrgDashboard orgs={orgs} />}
+        {tab === "Dashboard" && (
+          <OrgDashboard
+            orgs={orgs}
+            adminMode={adminMode}
+            nominations={nominations}
+            onApprove={handleApproveNomination}
+            onReject={handleRejectNomination}
+          />
+        )}
 
         {tab === "All Organizations" &&
           <div>
@@ -479,6 +528,14 @@ export default function Home() {
                   <LayoutGrid className="w-4 h-4" />
                 </button>
               </div>
+              <button
+                onClick={() => setShowNominate(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 text-sm font-medium hover:border-[#A51C30] hover:text-[#A51C30] hover:bg-[#A51C30]/5 transition-colors"
+                title="Suggest an organization to add"
+              >
+                <Lightbulb className="w-4 h-4" />
+                Nominate an Org
+              </button>
               {adminMode && (
                 <button
                   onClick={() => setEditingOrg(null)}

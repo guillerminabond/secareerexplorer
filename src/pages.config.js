@@ -1,9 +1,7 @@
-import Admin from './pages/Admin';
 import Home from './pages/Home';
 import __Layout from './Layout.jsx';
 
 export const PAGES = {
-    "Admin": Admin,
     "Home": Home,
 }
 
