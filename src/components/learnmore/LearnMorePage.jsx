@@ -9,7 +9,7 @@ const SUB_TABS = [
   { key: "careers", label: "💼 Career Paths" },
 ];
 
-export default function LearnMorePage() {
+export default function LearnMorePage({ adminMode }) {
   const [subTab, setSubTab] = useState("causes");
 
   return (
@@ -32,7 +32,7 @@ export default function LearnMorePage() {
 
       {subTab === "causes" && <CausesTab />}
       {subTab === "organizations" && <OrgsTab />}
-      {subTab === "careers" && <CareerPathsTab />}
+      {subTab === "careers" && <CareerPathsTab adminMode={adminMode} />}
     </div>
   );
 }
