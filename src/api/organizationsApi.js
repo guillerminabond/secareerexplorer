@@ -23,7 +23,6 @@ const ORG_SELECT = `
   hq,
   year_established,
   hbs_note,
-  hbs_relevance,
   notable_alumni,
   created_date,
   org_type:org_types(id, name),

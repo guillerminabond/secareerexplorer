@@ -71,10 +71,10 @@ export default function OrgModal({ org, onClose, onEdit }) {
               </div>
             )}
 
-            {(org.hbs_note || org.hbs_relevance) && (
+            {org.hbs_note && (
               <div className="bg-crimson/5 border border-crimson/20 rounded-xl p-3">
                 <p className="text-xs font-semibold text-crimson uppercase tracking-wide mb-1">HBS Note</p>
-                <p className="text-sm text-gray-700">{org.hbs_note || org.hbs_relevance}</p>
+                <p className="text-sm text-gray-700">{org.hbs_note}</p>
               </div>
             )}
 
