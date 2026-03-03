@@ -21,13 +21,13 @@ function DeleteCell({ orgId, onDelete }) {
     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
       <button
         onClick={() => onDelete(orgId)}
-        className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600"
+        className="px-2.5 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 min-h-[36px]"
       >
         Confirm
       </button>
       <button
         onClick={() => setConfirming(false)}
-        className="px-2 py-1 text-xs font-medium border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50"
+        className="px-2.5 py-1.5 text-xs font-medium border border-gray-200 text-gray-500 rounded-lg hover:bg-gray-50 min-h-[36px]"
       >
         Cancel
       </button>
@@ -35,10 +35,10 @@ function DeleteCell({ orgId, onDelete }) {
   ) : (
     <button
       onClick={e => { e.stopPropagation(); setConfirming(true); }}
-      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
       title="Delete"
     >
-      <Trash2 className="w-3.5 h-3.5" />
+      <Trash2 className="w-4 h-4" />
     </button>
   );
 }
@@ -47,17 +47,25 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
   const hasAdminCols = onEdit || onDelete;
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
+    // overflow-x-auto gives mobile a horizontal scroll fallback if needed;
+    // responsive column hiding handles the common case without scrolling.
+    <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+      <table className="w-full text-sm min-w-[320px]">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <th className="text-left px-4 py-3 w-8"></th>
-            <th className="text-left px-4 py-3">Organization</th>
-            <th className="text-left px-4 py-3">Type</th>
-            <th className="text-left px-4 py-3">Cause Areas</th>
-            <th className="text-left px-4 py-3">Regions</th>
-            <th className="text-left px-4 py-3 w-8"></th>
-            {hasAdminCols && <th className="text-left px-4 py-3 w-24"></th>}
+            {/* Save — always visible */}
+            <th className="text-left px-3 sm:px-4 py-3 w-8"></th>
+            {/* Organization — always visible */}
+            <th className="text-left px-3 sm:px-4 py-3">Organization</th>
+            {/* Type — hidden on xs, visible sm+ */}
+            <th className="text-left px-3 sm:px-4 py-3 hidden sm:table-cell">Type</th>
+            {/* Cause Areas — hidden on xs/sm, visible md+ */}
+            <th className="text-left px-3 sm:px-4 py-3 hidden md:table-cell">Cause Areas</th>
+            {/* Regions — hidden on xs/sm/md, visible lg+ */}
+            <th className="text-left px-3 sm:px-4 py-3 hidden lg:table-cell">Regions</th>
+            {/* External link — always visible */}
+            <th className="text-left px-3 sm:px-4 py-3 w-8"></th>
+            {hasAdminCols && <th className="text-left px-3 sm:px-4 py-3 w-20"></th>}
           </tr>
         </thead>
         <tbody>
@@ -67,56 +75,75 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
               onClick={() => onRowClick(org)}
               className={`border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-gray-50/30"}`}
             >
-              <td className="px-4 py-3">
+              {/* Save / bookmark */}
+              <td className="px-3 sm:px-4 py-3">
                 <button
                   onClick={e => { e.stopPropagation(); onSave(org.id); }}
-                  className="text-gray-300 hover:text-crimson"
+                  className="p-1.5 -m-1.5 text-gray-300 hover:text-crimson rounded"
+                  aria-label={savedIds.includes(org.id) ? "Unsave" : "Save"}
                 >
                   {savedIds.includes(org.id)
                     ? <BookmarkCheck className="w-4 h-4 text-crimson" />
                     : <Bookmark className="w-4 h-4" />}
                 </button>
               </td>
-              <td className="px-4 py-3">
+
+              {/* Organization name + description */}
+              <td className="px-3 sm:px-4 py-3">
                 <p className="font-semibold text-gray-900 leading-tight">{org.name}</p>
                 {org.description && (
-                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">{org.description}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs hidden sm:block">{org.description}</p>
+                )}
+                {/* Show type inline on mobile since the Type column is hidden */}
+                {org.org_type && (
+                  <span className="mt-1 inline-block sm:hidden px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{org.org_type}</span>
                 )}
               </td>
-              <td className="px-4 py-3">
+
+              {/* Type — sm+ */}
+              <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
                 {org.org_type && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{org.org_type}</span>
                 )}
               </td>
-              <td className="px-4 py-3 max-w-xs">
+
+              {/* Cause Areas — md+ */}
+              <td className="px-3 sm:px-4 py-3 max-w-xs hidden md:table-cell">
                 <TagList items={org.cause_areas} colorClass="bg-crimson/10 text-crimson" />
               </td>
-              <td className="px-4 py-3 max-w-xs">
+
+              {/* Regions — lg+ */}
+              <td className="px-3 sm:px-4 py-3 max-w-xs hidden lg:table-cell">
                 <TagList items={org.regions} colorClass="bg-blue-50 text-blue-600" />
               </td>
-              <td className="px-4 py-3">
+
+              {/* External link */}
+              <td className="px-3 sm:px-4 py-3">
                 {org.website && (
                   <a
                     href={org.website}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}
-                    className="text-gray-400 hover:text-crimson"
+                    className="p-1.5 -m-1.5 text-gray-400 hover:text-crimson inline-block"
+                    aria-label="Visit website"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
               </td>
+
+              {/* Admin actions */}
               {hasAdminCols && (
-                <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                  <div className="flex items-center gap-1">
+                <td className="px-3 sm:px-4 py-3" onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-0.5">
                     {onEdit && (
                       <button
                         onClick={() => onEdit(org)}
-                        className="p-1.5 text-gray-300 hover:text-crimson hover:bg-crimson/5 rounded-lg transition-colors"
+                        className="p-2 text-gray-300 hover:text-crimson hover:bg-crimson/5 rounded-lg transition-colors"
                         title="Edit"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Pencil className="w-4 h-4" />
                       </button>
                     )}
                     {onDelete && <DeleteCell orgId={org.id} onDelete={onDelete} />}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { fetchOrgs, createOrg, updateOrg, deleteOrg } from "@/api/organizationsApi";
 import { fetchContent, upsertContent } from "@/api/contentApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
@@ -329,7 +329,10 @@ export default function Home() {
     try { return JSON.parse(localStorage.getItem("hbs_saved_orgs") || "[]"); } catch { return []; }
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState("table");
+  // Default to grid on mobile (< 640 px) where a table is hard to use
+  const [viewMode, setViewMode] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
+  );
 
   // Admin state
   const [adminMode, setAdminMode] = useState(false);
@@ -382,13 +385,20 @@ export default function Home() {
   const toggleResourceTag = tag =>
     setResourceTagFilters(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
 
-  // Featured resources float to top; then filter by active tags (OR logic)
-  const applyResourceFilters = resources => {
+  // Memoized filtered+sorted resource lists — avoids re-sorting on every render
+  const filteredGeneralResources = useMemo(() => {
     const out = resourceTagFilters.length === 0
-      ? [...resources]
-      : resources.filter(r => (r.tags || []).some(t => resourceTagFilters.includes(t)));
+      ? [...generalResources]
+      : generalResources.filter(r => (r.tags || []).some(t => resourceTagFilters.includes(t)));
     return out.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-  };
+  }, [generalResources, resourceTagFilters]);
+
+  const filteredHbsResources = useMemo(() => {
+    const out = resourceTagFilters.length === 0
+      ? [...hbsResources]
+      : hbsResources.filter(r => (r.tags || []).some(t => resourceTagFilters.includes(t)));
+    return out.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  }, [hbsResources, resourceTagFilters]);
 
   const toggleFeatured = async (section, index) => {
     const isGeneral = section === "general";
@@ -577,107 +587,112 @@ export default function Home() {
 
       {/* ── Nav bar ────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 flex gap-1 items-center">
+        <div className="max-w-5xl mx-auto flex items-center">
 
-          {/* Explore */}
-          <button
-            onClick={() => { setTab("Explore"); setShowOrgMenu(false); }}
-            className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              tab === "Explore" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Explore
-          </button>
+          {/* Scrollable tab strip — hides scrollbar, tabs never wrap or clip */}
+          <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 flex-1 min-w-0">
 
-          {/* All Organizations — dropdown */}
-          <div className="relative" ref={orgMenuRef}>
+            {/* Explore */}
             <button
-              onClick={() => {
-                if (tab !== "All Organizations") { setTab("All Organizations"); }
-                setShowOrgMenu(p => !p);
-              }}
-              className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
-                tab === "All Organizations" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              onClick={() => { setTab("Explore"); setShowOrgMenu(false); }}
+              className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                tab === "Explore" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
-              All Organizations
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${showOrgMenu ? "rotate-180" : ""}`} />
-              {/* Saved orgs badge */}
-              {savedIds.length > 0 && (
-                <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>
-                  {savedIds.length}
-                </span>
-              )}
-              {/* Pending nominations badge (admin only) */}
-              {adminMode && pendingNomCount > 0 && (
-                <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>
-                  {pendingNomCount}
-                </span>
-              )}
+              Explore
             </button>
 
-            {showOrgMenu && (
-              <div className="absolute top-full mt-1 left-0 bg-white border border-gray-100 rounded-xl shadow-lg z-20 min-w-[210px] py-1.5 overflow-hidden">
-                {ALL_ORGS_SUBTABS.map(sub => {
-                  const isActive = tab === "All Organizations" && allOrgsSubTab === sub;
-                  const label = sub === "Dashboard" && adminMode ? "Admin Dashboard" : sub;
-                  return (
-                    <button
-                      key={sub}
-                      onClick={() => goToSubTab(sub)}
-                      className={`w-full text-left flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
-                        isActive ? "text-[#A51C30] bg-[#A51C30]/5 font-medium" : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {label}
-                      <span className="flex gap-1">
-                        {sub === "Saved Organizations" && savedIds.length > 0 && (
-                          <span className="text-xs bg-crimson text-white rounded-full px-1.5 py-0.5 leading-none">{savedIds.length}</span>
-                        )}
-                        {sub === "Dashboard" && adminMode && pendingNomCount > 0 && (
-                          <span className="text-xs bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingNomCount}</span>
-                        )}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            {/* All Organizations — dropdown */}
+            <div className="relative flex-shrink-0" ref={orgMenuRef}>
+              <button
+                onClick={() => {
+                  if (tab !== "All Organizations") setTab("All Organizations");
+                  setShowOrgMenu(p => !p);
+                }}
+                className={`my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
+                  tab === "All Organizations" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                All Organizations
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${showOrgMenu ? "rotate-180" : ""}`} />
+                {savedIds.length > 0 && (
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>
+                    {savedIds.length}
+                  </span>
+                )}
+                {adminMode && pendingNomCount > 0 && (
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>
+                    {pendingNomCount}
+                  </span>
+                )}
+              </button>
+
+              {showOrgMenu && (
+                <div className="absolute top-full mt-1 left-0 bg-white border border-gray-100 rounded-xl shadow-lg z-20 min-w-[210px] py-1.5 overflow-hidden">
+                  {ALL_ORGS_SUBTABS.map(sub => {
+                    const isActive = tab === "All Organizations" && allOrgsSubTab === sub;
+                    const label = sub === "Dashboard" && adminMode ? "Admin Dashboard" : sub;
+                    return (
+                      <button
+                        key={sub}
+                        onClick={() => goToSubTab(sub)}
+                        className={`w-full text-left flex items-center justify-between px-4 py-3 text-sm transition-colors ${
+                          isActive ? "text-[#A51C30] bg-[#A51C30]/5 font-medium" : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {label}
+                        <span className="flex gap-1">
+                          {sub === "Saved Organizations" && savedIds.length > 0 && (
+                            <span className="text-xs bg-crimson text-white rounded-full px-1.5 py-0.5 leading-none">{savedIds.length}</span>
+                          )}
+                          {sub === "Dashboard" && adminMode && pendingNomCount > 0 && (
+                            <span className="text-xs bg-amber-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingNomCount}</span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Learn More */}
+            <button
+              onClick={() => { setTab("Learn More"); setShowOrgMenu(false); }}
+              className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                tab === "Learn More" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Learn More
+            </button>
+
+            {/* Additional Resources */}
+            <button
+              onClick={() => { setTab("Additional Resources"); setShowOrgMenu(false); }}
+              className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                tab === "Additional Resources" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              Resources
+            </button>
           </div>
 
-          {/* Learn More */}
-          <button
-            onClick={() => { setTab("Learn More"); setShowOrgMenu(false); }}
-            className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              tab === "Learn More" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Learn More
-          </button>
-
-          {/* Additional Resources */}
-          <button
-            onClick={() => { setTab("Additional Resources"); setShowOrgMenu(false); }}
-            className={`my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-              tab === "Additional Resources" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            Additional Resources
-          </button>
-
-          {/* Admin toggle */}
-          <button
-            onClick={handleAdminToggle}
-            className={`ml-auto my-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
-              adminMode
-                ? "bg-amber-50 text-amber-700 border-amber-300"
-                : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
-            }`}
-            title={adminMode ? "Click to exit admin mode" : "Click to enable admin mode"}
-          >
-            <Lock className="w-3 h-3" />
-            {adminMode ? "Admin ●" : "Admin"}
-          </button>
+          {/* Admin toggle — always pinned to right, never scrolls away */}
+          <div className="flex-shrink-0 border-l border-gray-100 px-3 sm:px-4 self-stretch flex items-center">
+            <button
+              onClick={handleAdminToggle}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                adminMode
+                  ? "bg-amber-50 text-amber-700 border-amber-300"
+                  : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
+              }`}
+              title={adminMode ? "Click to exit admin mode" : "Click to enable admin mode"}
+            >
+              <Lock className="w-3 h-3" />
+              <span className="hidden sm:inline">{adminMode ? "Admin ●" : "Admin"}</span>
+              {adminMode && <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-amber-500" />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -826,16 +841,17 @@ export default function Home() {
               </div>
               <div className="space-y-2.5">
                 {Object.entries(RESOURCE_TAG_GROUPS).map(([group, tags]) => (
-                  <div key={group} className="flex items-start gap-3">
-                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-16 shrink-0 pt-1">{group}</span>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div key={group} className="flex items-start gap-2 sm:gap-3">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-14 sm:w-16 shrink-0 pt-1.5">{group}</span>
+                    {/* Scroll on mobile, wrap on sm+ */}
+                    <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
                       {tags.map(tag => {
                         const active = resourceTagFilters.includes(tag);
                         return (
                           <button
                             key={tag}
                             onClick={() => toggleResourceTag(tag)}
-                            className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            className={`flex-shrink-0 text-xs px-2.5 py-1.5 rounded-full border transition-colors min-h-[32px] ${
                               active
                                 ? "bg-[#A51C30] text-white border-[#A51C30]"
                                 : "bg-white text-gray-500 border-gray-200 hover:border-[#A51C30]/50 hover:text-[#A51C30]"
@@ -863,7 +879,7 @@ export default function Home() {
                   Job Boards & Career Platforms
                   {resourceTagFilters.length > 0 && (
                     <span className="ml-2 text-xs font-normal text-gray-400">
-                      {applyResourceFilters(generalResources).length} of {generalResources.length}
+                      {filteredGeneralResources.length} of {generalResources.length}
                     </span>
                   )}
                 </h2>
@@ -877,11 +893,11 @@ export default function Home() {
                 )}
               </div>
 
-              {applyResourceFilters(generalResources).length === 0 ? (
+              {filteredGeneralResources.length === 0 ? (
                 <p className="text-sm text-gray-400 py-6 text-center">No resources match the selected filters.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {applyResourceFilters(generalResources).map((r, i) => {
+                  {filteredGeneralResources.map((r, i) => {
                     const realIndex = generalResources.indexOf(r);
                     return (
                       <div key={realIndex} className={`bg-white border rounded-xl p-5 flex flex-col gap-3 relative group ${r.featured ? "border-amber-200 shadow-sm" : "border-gray-100"}`}>
@@ -970,7 +986,7 @@ export default function Home() {
                   🎓 HBS-Specific Resources
                   {resourceTagFilters.length > 0 && (
                     <span className="ml-2 text-xs font-normal text-gray-400">
-                      {applyResourceFilters(hbsResources).length} of {hbsResources.length}
+                      {filteredHbsResources.length} of {hbsResources.length}
                     </span>
                   )}
                 </h2>
@@ -984,11 +1000,11 @@ export default function Home() {
                 )}
               </div>
 
-              {applyResourceFilters(hbsResources).length === 0 ? (
+              {filteredHbsResources.length === 0 ? (
                 <p className="text-sm text-gray-400 py-6 text-center">No resources match the selected filters.</p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {applyResourceFilters(hbsResources).map((r) => {
+                  {filteredHbsResources.map((r) => {
                     const realIndex = hbsResources.indexOf(r);
                     return (
                       <div key={realIndex} className={`bg-white border rounded-xl p-4 relative group hover:shadow-md transition-shadow ${r.featured ? "border-amber-200" : "border-gray-100"}`}>

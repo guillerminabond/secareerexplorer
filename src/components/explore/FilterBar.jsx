@@ -22,20 +22,21 @@ export default function FilterBar({ active, onChange }) {
   const hasFilters = Object.values(active).some(v => v?.length > 0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {Object.entries(FILTERS).map(([key, values]) => (
         <div key={key}>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
             {key.replace(/_/g, " ")}
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          {/* Horizontal scroll on mobile (no wrap), wrap on sm+ */}
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
             {values.map(v => {
               const isActive = (active[key] || []).includes(v);
               return (
                 <button
                   key={v}
                   onClick={() => toggle(key, v)}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[36px] ${
                     isActive
                       ? "bg-crimson text-white border-crimson"
                       : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
@@ -51,9 +52,9 @@ export default function FilterBar({ active, onChange }) {
       {hasFilters && (
         <button
           onClick={clearAll}
-          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600"
+          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 min-h-[36px]"
         >
-          <X className="w-3 h-3" /> Clear all filters
+          <X className="w-3.5 h-3.5" /> Clear all filters
         </button>
       )}
     </div>
