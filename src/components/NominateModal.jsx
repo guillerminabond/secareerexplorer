@@ -11,8 +11,8 @@ const CAUSE_AREAS = [
 ];
 
 const REGIONS = [
-  "Global", "US National", "Northeast", "Southeast", "Midwest", "West",
-  "Africa", "Asia", "Latin America", "Europe",
+  "Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa",
+  "South Asia", "East Asia", "Latin America", "Europe",
 ];
 
 export default function NominateModal({ onClose }) {

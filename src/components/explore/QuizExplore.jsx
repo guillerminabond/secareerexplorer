@@ -3,18 +3,6 @@ import { ArrowLeft, RotateCcw, ChevronRight, Shuffle, Search, X } from "lucide-r
 import OrgCard from "./OrgCard";
 import OrgModal from "./OrgModal";
 
-// ── Region helpers ────────────────────────────────────────────────────────────
-// The DB may still have old US sub-regions. "North America" in the quiz
-// expands to match any of them so legacy data doesn't break results.
-const NORTH_AMERICA_DB_VALUES = [
-  "North America", "US National", "Northeast", "Southeast", "Midwest", "West",
-];
-
-function regionMatches(orgRegions, selectedRegion) {
-  const expand = selectedRegion === "North America" ? NORTH_AMERICA_DB_VALUES : [selectedRegion];
-  return (orgRegions || []).some(r => expand.includes(r));
-}
-
 // ── Text search scorer ────────────────────────────────────────────────────────
 // Pure client-side, no API calls.
 // Returns a relevance score; 0 means no match.
@@ -48,7 +36,7 @@ const CAUSE_OPTIONS = [
   "Climate & Energy", "Gender & Social Justice", "Financial Inclusion",
   "Housing & Community", "Arts & Culture",
 ];
-const REGION_OPTIONS = ["Global", "North America", "Africa", "Asia", "Latin America", "Europe"];
+const REGION_OPTIONS = ["Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa", "South Asia", "East Asia", "Latin America", "Europe"];
 const ORG_TYPE_OPTIONS = [
   "Nonprofit", "Impact Investing / Foundation", "Hybrid",
   "B Corporation", "Government / Public Sector", "Cooperative",
@@ -160,9 +148,6 @@ function applyFilters(orgs, filters) {
       if (key === "org_type") {
         // Single-value field — exact match
         if (!values.includes(org[key])) return false;
-      } else if (key === "regions") {
-        // Region-aware: "North America" expands to legacy DB values
-        if (!values.some(sel => regionMatches(org.regions, sel))) return false;
       } else {
         const orgVals = org[key] || [];
         if (!values.some(v => orgVals.includes(v))) return false;

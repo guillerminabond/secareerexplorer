@@ -129,27 +129,16 @@ function NominationsQueue({ nominations, onApprove, onReject }) {
 }
 
 // ── Cause × Region matrix (admin only) ───────────────────────
-// US sub-regions are consolidated into "North America"
-const REGION_MAP = {
-  "Global": "Global",
-  "US National": "North America",
-  "Northeast": "North America",
-  "Southeast": "North America",
-  "Midwest": "North America",
-  "West": "North America",
-  "Africa": "Africa",
-  "Europe": "Europe",
-  "Asia": "Asia",
-  "Latin America": "Latin America",
-};
-
 const MATRIX_CAUSES = [
   "Poverty Alleviation", "Economic Development", "Global Health", "Education",
   "Climate & Energy", "Gender & Social Justice", "Financial Inclusion",
   "Housing & Community", "Arts & Culture",
 ];
 
-const MATRIX_REGIONS = ["Global", "North America", "Africa", "Europe", "Asia", "Latin America"];
+const MATRIX_REGIONS = [
+  "Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa",
+  "South Asia", "East Asia", "Latin America", "Europe",
+];
 
 function CauseRegionMatrix({ orgs }) {
   const matrix = useMemo(() => {
@@ -160,7 +149,7 @@ function CauseRegionMatrix({ orgs }) {
     });
     orgs.forEach(org => {
       const orgCauses = splitVals(org.cause_areas);
-      const orgRegions = splitVals(org.regions).map(r => REGION_MAP[r]).filter(Boolean);
+      const orgRegions = splitVals(org.regions).filter(r => MATRIX_REGIONS.includes(r));
       const uniqueRegions = [...new Set(orgRegions)];
       orgCauses.forEach(c => {
         if (m[c]) {
@@ -339,7 +328,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <SectionTitle>Cause × Region Coverage Matrix</SectionTitle>
           <p className="text-xs text-gray-400 mb-4">
-            Green = dense coverage · Orange = moderate · Red = sparse · Gray = no orgs. US sub-regions consolidated into North America.
+            Green = dense coverage · Orange = moderate · Red = sparse · Gray = no orgs tagged for that region.
           </p>
           <CauseRegionMatrix orgs={orgs} />
         </div>
