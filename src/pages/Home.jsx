@@ -533,6 +533,13 @@ export default function Home() {
     return [];
   };
 
+  // "North America" in the filter should match any legacy US sub-region stored in the DB
+  const NORTH_AMERICA_DB_VALUES = ["North America", "US National", "Northeast", "Southeast", "Midwest", "West"];
+  const regionMatches = (orgRegions, selectedRegion) => {
+    const expand = selectedRegion === "North America" ? NORTH_AMERICA_DB_VALUES : [selectedRegion];
+    return getValuesAsArray(orgRegions).some(r => expand.includes(r));
+  };
+
   const filtered = orgs.filter((org) => {
     if (search && !org.name?.toLowerCase().includes(search.toLowerCase()) &&
       !org.description?.toLowerCase().includes(search.toLowerCase())) return false;
@@ -542,6 +549,8 @@ export default function Home() {
         const orgVal = org[key] || "";
         const match = values.some(v => orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation")));
         if (!match) return false;
+      } else if (key === "regions") {
+        if (!values.some(sel => regionMatches(org.regions, sel))) return false;
       } else {
         const orgVals = getValuesAsArray(org[key]);
         if (!values.some((v) => orgVals.includes(v))) return false;

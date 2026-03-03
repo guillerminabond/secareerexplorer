@@ -6,7 +6,7 @@ const FILTERS = {
   org_type: ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"],
   role_types: ["Operator", "Funder", "Enabler", "Advocacy & Policy"],
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
-  regions: ["Global", "US National", "Northeast", "Southeast", "Midwest", "West", "Africa", "Asia", "Latin America", "Europe"],
+  regions: ["Global", "North America", "Africa", "Asia", "Latin America", "Europe"],
 };
 
 export default function FilterBar({ active, onChange }) {
