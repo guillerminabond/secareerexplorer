@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -135,10 +136,9 @@ const MATRIX_CAUSES = [
   "Housing & Community", "Arts & Culture",
 ];
 
-const MATRIX_REGIONS = [
-  "Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa",
-  "South Asia", "East Asia", "Latin America", "Europe",
-];
+// Matrix columns = parent regions; each cell counts orgs whose sub-regions
+// expand to that parent (e.g. an "East Africa" org counts under "Africa")
+const MATRIX_REGIONS = PARENT_REGIONS;
 
 function CauseRegionMatrix({ orgs }) {
   const matrix = useMemo(() => {
@@ -149,7 +149,16 @@ function CauseRegionMatrix({ orgs }) {
     });
     orgs.forEach(org => {
       const orgCauses = splitVals(org.cause_areas);
-      const orgRegions = splitVals(org.regions).filter(r => MATRIX_REGIONS.includes(r));
+      // Expand each org's sub-regions back to their parent for counting
+      const orgRegions = [...new Set(
+        splitVals(org.regions).flatMap(subRegion => {
+          // Find which parent owns this sub-region
+          const match = MATRIX_REGIONS.find(parent =>
+            expandRegions([parent]).includes(subRegion)
+          );
+          return match ? [match] : [];
+        })
+      )];
       const uniqueRegions = [...new Set(orgRegions)];
       orgCauses.forEach(c => {
         if (m[c]) {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { expandRegions } from "@/constants/regions";
 import { fetchOrgs, createOrg, updateOrg, deleteOrg } from "@/api/organizationsApi";
 import { fetchContent, upsertContent } from "@/api/contentApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
@@ -542,6 +543,11 @@ export default function Home() {
         const orgVal = org[key] || "";
         const match = values.some(v => orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation")));
         if (!match) return false;
+      } else if (key === "regions") {
+        // Expand parent region selections (e.g. "Africa" → all Africa sub-regions)
+        const expanded = expandRegions(values);
+        const orgVals  = getValuesAsArray(org[key]);
+        if (!expanded.some(v => orgVals.includes(v))) return false;
       } else {
         const orgVals = getValuesAsArray(org[key]);
         if (!values.some((v) => orgVals.includes(v))) return false;

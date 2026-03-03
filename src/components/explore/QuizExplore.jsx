@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { ArrowLeft, RotateCcw, ChevronRight, Shuffle, Search, X } from "lucide-react";
+import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
 import OrgCard from "./OrgCard";
 import OrgModal from "./OrgModal";
 
@@ -36,7 +37,8 @@ const CAUSE_OPTIONS = [
   "Climate & Energy", "Gender & Social Justice", "Financial Inclusion",
   "Housing & Community", "Arts & Culture",
 ];
-const REGION_OPTIONS = ["Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa", "South Asia", "East Asia", "Latin America", "Europe"];
+// Quiz shows parent regions only; applyFilters expands each to its sub-regions
+const REGION_OPTIONS = PARENT_REGIONS;
 const ORG_TYPE_OPTIONS = [
   "Nonprofit", "Impact Investing / Foundation", "Hybrid",
   "B Corporation", "Government / Public Sector", "Cooperative",
@@ -148,6 +150,11 @@ function applyFilters(orgs, filters) {
       if (key === "org_type") {
         // Single-value field — exact match
         if (!values.includes(org[key])) return false;
+      } else if (key === "regions") {
+        // Expand parent selections (e.g. "Africa" → all Africa sub-regions)
+        const expanded = expandRegions(values);
+        const orgVals  = org[key] || [];
+        if (!expanded.some(v => orgVals.includes(v))) return false;
       } else {
         const orgVals = org[key] || [];
         if (!values.some(v => orgVals.includes(v))) return false;

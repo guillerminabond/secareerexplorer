@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Send, CheckCircle } from "lucide-react";
 import { submitNomination } from "@/api/nominationsApi";
+import { REGION_HIERARCHY } from "@/constants/regions";
 
 const ORG_TYPES = ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"];
 
@@ -8,11 +9,6 @@ const CAUSE_AREAS = [
   "Poverty Alleviation", "Economic Development", "Global Health", "Education",
   "Climate & Energy", "Gender & Social Justice", "Financial Inclusion",
   "Housing & Community", "Arts & Culture",
-];
-
-const REGIONS = [
-  "Global", "North America", "Sub-Saharan Africa", "Middle East & North Africa",
-  "South Asia", "East Asia", "Latin America", "Europe",
 ];
 
 export default function NominateModal({ onClose }) {
@@ -170,23 +166,49 @@ export default function NominateModal({ onClose }) {
                 </div>
               </div>
 
-              {/* Regions */}
+              {/* Regions — grouped by parent, tagging at sub-region level */}
               <div>
-                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5 block">Regions</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {REGIONS.map(r => {
-                    const active = form.regions.includes(r);
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block">Regions</label>
+                <div className="space-y-2">
+                  {Object.entries(REGION_HIERARCHY).map(([parent, children]) => {
+                    if (children.length === 0) {
+                      // Global — standalone chip
+                      const isActive = form.regions.includes(parent);
+                      return (
+                        <div key={parent} className="flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toggleMulti("regions", parent)}
+                            className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                              isActive ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
+                            }`}
+                          >
+                            {parent}
+                          </button>
+                        </div>
+                      );
+                    }
                     return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => toggleMulti("regions", r)}
-                        className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                          active ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
-                        }`}
-                      >
-                        {r}
-                      </button>
+                      <div key={parent}>
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">{parent}</p>
+                        <div className="ml-2 flex flex-wrap gap-1.5">
+                          {children.map(child => {
+                            const isActive = form.regions.includes(child);
+                            return (
+                              <button
+                                key={child}
+                                type="button"
+                                onClick={() => toggleMulti("regions", child)}
+                                className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
+                                  isActive ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
+                                }`}
+                              >
+                                {child}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

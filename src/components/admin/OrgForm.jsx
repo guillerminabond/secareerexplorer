@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createOrg, updateOrg, fetchLookups } from "@/api/organizationsApi";
+import { REGION_HIERARCHY } from "@/constants/regions";
 
 const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30";
 
@@ -28,6 +29,42 @@ const MultiCheck = ({ options, value = [], onChange }) => (
     ))}
   </div>
 );
+
+// Regions are tagged at sub-region level, grouped by parent for clarity
+const GroupedRegionCheck = ({ value = [], onChange }) => {
+  const toggle = (region) => {
+    const next = value.includes(region) ? value.filter(v => v !== region) : [...value, region];
+    onChange(next);
+  };
+  return (
+    <div className="space-y-2">
+      {Object.entries(REGION_HIERARCHY).map(([parent, children]) => {
+        if (children.length === 0) {
+          // Global — standalone checkbox
+          return (
+            <label key={parent} className="flex items-center gap-1.5 text-sm cursor-pointer">
+              <input type="checkbox" checked={value.includes(parent)} onChange={() => toggle(parent)} className="accent-crimson" />
+              {parent}
+            </label>
+          );
+        }
+        return (
+          <div key={parent}>
+            <p className="text-xs font-semibold text-gray-500 mb-1">{parent}</p>
+            <div className="ml-3 flex flex-wrap gap-x-4 gap-y-1">
+              {children.map(child => (
+                <label key={child} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input type="checkbox" checked={value.includes(child)} onChange={() => toggle(child)} className="accent-crimson" />
+                  {child}
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export default function OrgForm({ org, onSave, onCancel }) {
   const [form, setForm] = useState(org || {
@@ -119,7 +156,7 @@ export default function OrgForm({ org, onSave, onCancel }) {
       </Field>
 
       <Field label="Regions">
-        <MultiCheck options={lookups.regions} value={form.regions} onChange={v => set("regions", v)} />
+        <GroupedRegionCheck value={form.regions} onChange={v => set("regions", v)} />
       </Field>
 
       <Field label="Target Populations">
