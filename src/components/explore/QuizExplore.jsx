@@ -4,31 +4,95 @@ import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
 import OrgCard from "./OrgCard";
 import OrgModal from "./OrgModal";
 
-// ── Text search scorer ────────────────────────────────────────────────────────
-// Pure client-side, no API calls.
-// Returns a relevance score; 0 means no match.
-function scoreOrgText(org, query) {
-  if (!query?.trim()) return 0;
-  const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
-  if (!terms.length) return 0;
+// ── Text search ───────────────────────────────────────────────────────────────
+// Words that carry no meaning for matching — filtered out before scoring.
+const STOPWORDS = new Set([
+  "in", "for", "the", "and", "or", "a", "an", "with", "of", "at", "to", "by",
+  "that", "is", "are", "was", "on", "about", "from", "i", "my", "me", "want",
+  "looking", "find", "work", "job", "career", "focused", "based", "working",
+]);
 
-  const fields = {
-    name:         { text: (org.name || "").toLowerCase(),                               weight: 5 },
-    org_type:     { text: (org.org_type || "").toLowerCase(),                           weight: 3 },
-    cause_areas:  { text: (org.cause_areas || []).join(" ").toLowerCase(),              weight: 3 },
-    regions:      { text: (org.regions || []).join(" ").toLowerCase(),                  weight: 3 },
-    role_types:   { text: (org.role_types || []).join(" ").toLowerCase(),               weight: 2 },
-    populations:  { text: (org.target_populations || []).join(" ").toLowerCase(),       weight: 2 },
-    description:  { text: (org.description || "").toLowerCase(),                        weight: 1 },
-  };
-
+// Score a single term against a single org. Returns 0 if the term doesn't match.
+function termScore(org, term) {
+  const fields = [
+    { text: (org.name || "").toLowerCase(),                         weight: 5 },
+    { text: (org.org_type || "").toLowerCase(),                     weight: 3 },
+    { text: (org.cause_areas || []).join(" ").toLowerCase(),        weight: 3 },
+    { text: (org.regions || []).join(" ").toLowerCase(),            weight: 3 },
+    { text: (org.role_types || []).join(" ").toLowerCase(),         weight: 2 },
+    { text: (org.target_populations || []).join(" ").toLowerCase(), weight: 2 },
+    { text: (org.description || "").toLowerCase(),                  weight: 1 },
+  ];
   let score = 0;
-  for (const term of terms) {
-    for (const { text, weight } of Object.values(fields)) {
-      if (text.includes(term)) score += weight;
-    }
+  for (const { text, weight } of fields) {
+    if (text.includes(term)) score += weight;
   }
   return score;
+}
+
+/**
+ * AND-first search with partial fallback.
+ *
+ * Returns:
+ *   { mode: "idle" }                                — query too short
+ *   { mode: "full",    results, terms }             — all terms matched
+ *   { mode: "partial", results, terms,
+ *     matchedCount, totalTerms, missing }           — best partial match
+ *   { mode: "none",    terms }                      — nothing matched at all
+ */
+function searchOrgs(orgs, query) {
+  const raw = query?.trim().toLowerCase() ?? "";
+  if (raw.length < 2) return { mode: "idle" };
+
+  const terms = raw.split(/\s+/).filter(t => t.length > 1 && !STOPWORDS.has(t));
+  if (!terms.length) return { mode: "idle" };
+
+  // Per-org: score each term independently
+  const scored = orgs.map(org => {
+    const perTerm = terms.map(t => ({ term: t, score: termScore(org, t) }));
+    const matched   = perTerm.filter(r => r.score > 0);
+    const unmatched = perTerm.filter(r => r.score === 0);
+    return {
+      org,
+      matched,
+      unmatched,
+      totalScore: matched.reduce((s, r) => s + r.score, 0),
+    };
+  });
+
+  // ── Full matches: every term must be present ──
+  const full = scored
+    .filter(s => s.unmatched.length === 0)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map(s => s.org);
+
+  if (full.length > 0) return { mode: "full", results: full, terms };
+
+  // ── Partial matches: best coverage available ──
+  const maxMatched = Math.max(0, ...scored.map(s => s.matched.length));
+  if (maxMatched === 0) return { mode: "none", terms };
+
+  const partials = scored
+    .filter(s => s.matched.length === maxMatched)
+    .sort((a, b) => b.totalScore - a.totalScore);
+
+  // Identify which terms were consistently unmatched (to explain to user)
+  const unmatchedFreq = {};
+  partials.forEach(p => p.unmatched.forEach(r => {
+    unmatchedFreq[r.term] = (unmatchedFreq[r.term] || 0) + 1;
+  }));
+  const missing = Object.entries(unmatchedFreq)
+    .sort((a, b) => b[1] - a[1])
+    .map(([t]) => t);
+
+  return {
+    mode:         "partial",
+    results:      partials.map(s => s.org),
+    terms,
+    matchedCount: maxMatched,
+    totalTerms:   terms.length,
+    missing,
+  };
 }
 
 // ── Quiz stream definitions ───────────────────────────────────────────────────
@@ -186,15 +250,11 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
 
   const isSearching = !stream && searchQuery.trim().length >= 2;
 
-  // Scored search results — recomputed only when orgs or query changes
-  const searchResults = useMemo(() => {
-    if (!isSearching) return [];
-    return orgs
-      .map(org => ({ org, score: scoreOrgText(org, searchQuery) }))
-      .filter(({ score }) => score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(({ org }) => org);
-  }, [orgs, searchQuery, isSearching]);
+  // AND-first search with partial fallback — recomputed when orgs or query changes
+  const search = useMemo(
+    () => isSearching ? searchOrgs(orgs, searchQuery) : { mode: "idle" },
+    [orgs, searchQuery, isSearching]
+  );
 
   // Quiz filtered results
   const filteredOrgs = useMemo(() =>
@@ -278,26 +338,59 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
         {/* ── Search results ──────────────────────────────────────────── */}
         {isSearching && (
           <div className="mb-6">
-            {searchResults.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">
-                No organizations match "{searchQuery}" — try different keywords or explore below.
-              </p>
-            ) : (
+            {search.mode === "none" && (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500 mb-1">
+                  No organizations match <span className="font-medium">"{searchQuery}"</span>
+                </p>
+                <p className="text-xs text-gray-400">Try different keywords, or use the guided explorer below.</p>
+              </div>
+            )}
+
+            {search.mode === "partial" && (
+              <>
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+                  <span className="text-amber-500 mt-0.5 flex-shrink-0">⚠</span>
+                  <div className="text-xs text-amber-800 leading-relaxed">
+                    <span className="font-semibold">No exact matches</span> for all your terms.{" "}
+                    {search.missing.length > 0 && (
+                      <>
+                        The term{search.missing.length > 1 ? "s" : ""}{" "}
+                        {search.missing.map((t, i) => (
+                          <span key={t}>
+                            <span className="font-semibold">"{t}"</span>
+                            {i < search.missing.length - 1 ? " and " : ""}
+                          </span>
+                        ))}{" "}
+                        didn't match any organization.{" "}
+                      </>
+                    )}
+                    Showing {search.results.length} partial match{search.results.length !== 1 ? "es" : ""} ({search.matchedCount} of {search.totalTerms} terms matched).
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {search.results.map(org => (
+                    <OrgCard key={org.id} org={org} saved={savedIds.includes(org.id)}
+                      onSave={onSave} onClick={() => setSelectedOrg(org)}
+                      onEdit={onEdit} onDelete={onDelete} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {search.mode === "full" && (
               <>
                 <p className="text-xs text-gray-400 mb-3">
-                  <span className="font-medium text-gray-600">{searchResults.length} result{searchResults.length !== 1 ? "s" : ""}</span> for "{searchQuery}" — sorted by relevance
+                  <span className="font-medium text-gray-600">
+                    {search.results.length} result{search.results.length !== 1 ? "s" : ""}
+                  </span>{" "}
+                  for <span className="font-medium text-gray-600">"{searchQuery}"</span> — sorted by relevance
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {searchResults.map(org => (
-                    <OrgCard
-                      key={org.id}
-                      org={org}
-                      saved={savedIds.includes(org.id)}
-                      onSave={onSave}
-                      onClick={() => setSelectedOrg(org)}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                    />
+                  {search.results.map(org => (
+                    <OrgCard key={org.id} org={org} saved={savedIds.includes(org.id)}
+                      onSave={onSave} onClick={() => setSelectedOrg(org)}
+                      onEdit={onEdit} onDelete={onDelete} />
                   ))}
                 </div>
               </>
@@ -305,8 +398,8 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
           </div>
         )}
 
-        {/* ── Stream selector ─────────────────────────────────────────── */}
-        {!isSearching && (
+        {/* ── Stream selector — hidden only when full search results fill the screen ── */}
+        {(!isSearching || search.mode === "none" || search.mode === "partial") && (
           <>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">
               Or explore by
