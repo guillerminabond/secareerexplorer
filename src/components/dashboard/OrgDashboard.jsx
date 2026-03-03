@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
+import { fetchFeedback } from "@/api/feedbackApi";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -57,28 +58,64 @@ function StatusBadge({ status }) {
 }
 
 // ── Nominations queue (admin only) ────────────────────────────
+const NOM_TABS = ["Pending", "Approved", "Rejected", "All"];
+
 function NominationsQueue({ nominations, onApprove, onReject }) {
   const [expanded, setExpanded] = useState(null);
-  const pending = nominations.filter(n => n.status === "pending");
+  const [activeTab, setActiveTab] = useState("Pending");
+
+  const counts = useMemo(() => ({
+    Pending:  nominations.filter(n => n.status === "pending").length,
+    Approved: nominations.filter(n => n.status === "approved").length,
+    Rejected: nominations.filter(n => n.status === "rejected").length,
+    All:      nominations.length,
+  }), [nominations]);
+
+  const visible = useMemo(() => {
+    if (activeTab === "All") return nominations;
+    return nominations.filter(n => n.status === activeTab.toLowerCase());
+  }, [nominations, activeTab]);
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <SectionTitle>Nominations Queue</SectionTitle>
-        {pending.length > 0 && (
+        {counts.Pending > 0 && (
           <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-            {pending.length} pending
+            {counts.Pending} pending
           </span>
         )}
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 mb-3 border-b border-gray-100 pb-3">
+        {NOM_TABS.map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              activeTab === tab
+                ? "bg-crimson text-white"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {tab}
+            <span className={`ml-1 ${activeTab === tab ? "opacity-80" : "opacity-60"}`}>
+              ({counts[tab]})
+            </span>
+          </button>
+        ))}
       </div>
 
       {nominations.length === 0 ? (
         <p className="text-sm text-gray-400">
           No nominations yet. They'll appear here when users submit them via the "Nominate an Org" button.
         </p>
+      ) : visible.length === 0 ? (
+        <p className="text-sm text-gray-400">No {activeTab.toLowerCase()} nominations.</p>
       ) : (
         <div className="space-y-2">
-          {nominations.map(n => (
+          {visible.map(n => (
             <div key={n.id} className="border border-gray-100 rounded-lg overflow-hidden">
               <div
                 className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-gray-50"
@@ -129,6 +166,72 @@ function NominationsQueue({ nominations, onApprove, onReject }) {
   );
 }
 
+// ── Feedback inbox (admin only) ───────────────────────────────
+function FeedbackInbox() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+
+  useEffect(() => {
+    fetchFeedback()
+      .then(setItems)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const typeColor = (t) => {
+    if (t === "Bug") return "bg-red-50 text-red-600";
+    if (t === "Suggestion") return "bg-blue-50 text-blue-600";
+    if (t === "Content") return "bg-purple-50 text-purple-600";
+    return "bg-gray-100 text-gray-500";
+  };
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl p-5">
+      <SectionTitle>Feedback Inbox</SectionTitle>
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="w-5 h-5 border-2 border-gray-200 border-t-crimson rounded-full animate-spin" />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-400">No feedback yet. The form is visible to all users via the feedback button.</p>
+      ) : (
+        <div className="space-y-2">
+          {items.map(item => (
+            <div key={item.id} className="border border-gray-100 rounded-lg overflow-hidden">
+              <div
+                className="flex items-center justify-between px-3 py-2.5 cursor-pointer hover:bg-gray-50"
+                onClick={() => setExpanded(expanded === item.id ? null : item.id)}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${typeColor(item.type)}`}>
+                    {item.type || "General"}
+                  </span>
+                  <span className="text-sm text-gray-700 truncate">{item.message}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  {item.name && <span className="text-xs text-gray-500 hidden sm:inline">{item.name}</span>}
+                  <span className="text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString()}</span>
+                </div>
+              </div>
+              {expanded === item.id && (
+                <div className="border-t border-gray-100 px-3 py-2.5 bg-gray-50 space-y-1 text-xs text-gray-600">
+                  <p className="text-sm text-gray-800 leading-relaxed">{item.message}</p>
+                  {item.name  && <p className="mt-2"><span className="font-semibold text-gray-500">Name:</span> {item.name}</p>}
+                  {item.email && <p><span className="font-semibold text-gray-500">Email:</span>{" "}
+                    <a href={`mailto:${item.email}`} className="text-[#A51C30] hover:underline">{item.email}</a>
+                  </p>}
+                  <p><span className="font-semibold text-gray-500">Submitted:</span> {new Date(item.created_at).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Cause × Region matrix (admin only) ───────────────────────
 const MATRIX_CAUSES = [
   "Poverty Alleviation", "Economic Development", "Global Health", "Education",
@@ -136,11 +239,9 @@ const MATRIX_CAUSES = [
   "Housing & Community", "Arts & Culture",
 ];
 
-// Matrix columns = parent regions; each cell counts orgs whose sub-regions
-// expand to that parent (e.g. an "East Africa" org counts under "Africa")
 const MATRIX_REGIONS = PARENT_REGIONS;
 
-function CauseRegionMatrix({ orgs }) {
+function CauseRegionMatrix({ orgs, onNavigate }) {
   const matrix = useMemo(() => {
     const m = {};
     MATRIX_CAUSES.forEach(c => {
@@ -149,10 +250,8 @@ function CauseRegionMatrix({ orgs }) {
     });
     orgs.forEach(org => {
       const orgCauses = splitVals(org.cause_areas);
-      // Expand each org's sub-regions back to their parent for counting
       const orgRegions = [...new Set(
         splitVals(org.regions).flatMap(subRegion => {
-          // Find which parent owns this sub-region
           const match = MATRIX_REGIONS.find(parent =>
             expandRegions([parent]).includes(subRegion)
           );
@@ -196,8 +295,14 @@ function CauseRegionMatrix({ orgs }) {
               <td className="text-gray-600 font-medium pr-2 py-0.5 whitespace-nowrap">{c}</td>
               {MATRIX_REGIONS.map(r => {
                 const val = matrix[c][r];
+                const clickable = val > 0 && onNavigate;
                 return (
-                  <td key={r} className={`text-center rounded font-semibold py-1.5 px-2 ${cellColor(val)}`}>
+                  <td
+                    key={r}
+                    onClick={clickable ? () => onNavigate({ cause_areas: [c], regions: [r] }) : undefined}
+                    className={`text-center rounded font-semibold py-1.5 px-2 ${cellColor(val)} ${clickable ? "cursor-pointer hover:ring-2 hover:ring-crimson/40 transition-all" : ""}`}
+                    title={clickable ? `View orgs: ${c} × ${r}` : undefined}
+                  >
                     {val > 0 ? val : "–"}
                   </td>
                 );
@@ -211,22 +316,25 @@ function CauseRegionMatrix({ orgs }) {
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-orange-100" /> Moderate</span>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-red-100" /> Sparse</span>
         <span className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-gray-50 border" /> None</span>
+        {onNavigate && <span className="flex items-center gap-1 text-crimson/70">● Click any cell to explore those orgs</span>}
       </div>
     </div>
   );
 }
 
 // ── Main component ────────────────────────────────────────────
-export default function OrgDashboard({ orgs, adminMode = false, nominations = [], onApprove, onReject }) {
-  const causeData = useMemo(() => countBy(orgs, "cause_areas"), [orgs]);
-  const typeData  = useMemo(() => countBy(orgs, "org_type"), [orgs]);
+export default function OrgDashboard({ orgs, adminMode = false, nominations = [], onApprove, onReject, onNavigate }) {
+  const causeData  = useMemo(() => countBy(orgs, "cause_areas"), [orgs]);
+  const typeData   = useMemo(() => countBy(orgs, "org_type"), [orgs]);
   const regionData = useMemo(() => countBy(orgs, "regions"), [orgs]);
-  const roleData  = useMemo(() => countBy(orgs, "role_types"), [orgs]);
-  const popData   = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
+  const roleData   = useMemo(() => countBy(orgs, "role_types"), [orgs]);
+  const popData    = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
 
   const uniqueCauses  = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.cause_areas))).size, [orgs]);
   const uniqueRegions = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.regions))).size, [orgs]);
   const uniqueTypes   = useMemo(() => new Set(orgs.map(o => o.org_type).filter(Boolean)).size, [orgs]);
+
+  const navigate = onNavigate || null;
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload?.length) {
@@ -234,6 +342,20 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
         <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs shadow-md">
           <p className="font-semibold text-gray-800">{payload[0].payload.name}</p>
           <p className="text-[#A51C30]">{payload[0].value} orgs</p>
+          {navigate && <p className="text-gray-400 mt-0.5">Click to explore →</p>}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const PieTooltip = ({ active, payload }) => {
+    if (active && payload?.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs shadow-md">
+          <p className="font-semibold text-gray-800">{payload[0].name}</p>
+          <p className="text-[#A51C30]">{payload[0].value} orgs</p>
+          {navigate && <p className="text-gray-400 mt-0.5">Click to explore →</p>}
         </div>
       );
     }
@@ -261,12 +383,19 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       {/* ── Cause Area Breakdown ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Cause Area Breakdown</SectionTitle>
+        {navigate && <p className="text-xs text-gray-400 mb-3">Click a bar to explore organizations in that cause area.</p>}
         <ResponsiveContainer width="100%" height={320}>
           <BarChart data={causeData} layout="vertical" margin={{ left: 8, right: 24 }}>
             <XAxis type="number" tick={{ fontSize: 11, fill: "#9ca3af" }} />
             <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11, fill: "#374151" }} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="count" fill={CRIMSON} radius={[0, 4, 4, 0]} />
+            <Bar
+              dataKey="count"
+              fill={CRIMSON}
+              radius={[0, 4, 4, 0]}
+              style={navigate ? { cursor: "pointer" } : {}}
+              onClick={navigate ? (data) => navigate({ cause_areas: [data.name] }) : undefined}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -275,12 +404,23 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <SectionTitle>Org Type Distribution</SectionTitle>
+          {navigate && <p className="text-xs text-gray-400 mb-3">Click a segment to filter by org type.</p>}
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
-              <Pie data={typeData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
+              <Pie
+                data={typeData}
+                dataKey="count"
+                nameKey="name"
+                cx="50%" cy="50%"
+                outerRadius={80}
+                innerRadius={40}
+                paddingAngle={3}
+                style={navigate ? { cursor: "pointer" } : {}}
+                onClick={navigate ? (data) => navigate({ org_type: [data.name] }) : undefined}
+              >
                 {typeData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<PieTooltip />} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
@@ -288,12 +428,23 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
 
         <div className="bg-white border border-gray-100 rounded-xl p-5">
           <SectionTitle>Ecosystem Role Coverage</SectionTitle>
+          {navigate && <p className="text-xs text-gray-400 mb-3">Click a segment to filter by role type.</p>}
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
-              <Pie data={roleData} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={40} paddingAngle={3}>
+              <Pie
+                data={roleData}
+                dataKey="count"
+                nameKey="name"
+                cx="50%" cy="50%"
+                outerRadius={80}
+                innerRadius={40}
+                paddingAngle={3}
+                style={navigate ? { cursor: "pointer" } : {}}
+                onClick={navigate ? (data) => navigate({ role_types: [data.name] }) : undefined}
+              >
                 {roleData.map((_, i) => <Cell key={i} fill={COLORS[(i + 4) % COLORS.length]} />)}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<PieTooltip />} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
             </PieChart>
           </ResponsiveContainer>
@@ -303,12 +454,19 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       {/* ── Regional Coverage ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Regional Coverage</SectionTitle>
+        {navigate && <p className="text-xs text-gray-400 mb-3">Click a bar to explore organizations in that region.</p>}
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={regionData} margin={{ left: 8, right: 24, bottom: 8 }}>
             <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} angle={-20} textAnchor="end" interval={0} />
             <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} />
             <Tooltip content={<CustomTooltip />} />
-            <Bar dataKey="count" fill="#2980b9" radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="count"
+              fill="#2980b9"
+              radius={[4, 4, 0, 0]}
+              style={navigate ? { cursor: "pointer" } : {}}
+              onClick={navigate ? (data) => navigate({ regions: [data.name] }) : undefined}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -316,6 +474,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       {/* ── Population Focus ── */}
       <div className="bg-white border border-gray-100 rounded-xl p-5">
         <SectionTitle>Population Focus</SectionTitle>
+        {navigate && <p className="text-xs text-gray-400 mb-3">Click a tag to explore organizations serving that population.</p>}
         <div className="flex flex-wrap gap-2">
           {popData.map(({ name, count }) => {
             const maxCount = popData[0]?.count || 1;
@@ -323,7 +482,12 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
             const size = intensity > 0.7 ? "text-base px-4 py-2" : intensity > 0.4 ? "text-sm px-3 py-1.5" : "text-xs px-2.5 py-1";
             const bg = intensity > 0.7 ? "bg-[#A51C30] text-white" : intensity > 0.4 ? "bg-red-100 text-[#A51C30]" : "bg-gray-100 text-gray-600";
             return (
-              <span key={name} className={`rounded-full font-medium ${size} ${bg}`}>
+              <span
+                key={name}
+                onClick={navigate ? () => navigate({ target_populations: [name] }) : undefined}
+                className={`rounded-full font-medium ${size} ${bg} ${navigate ? "cursor-pointer hover:ring-2 hover:ring-crimson/40 transition-all" : ""}`}
+                title={navigate ? `Explore orgs focused on: ${name}` : undefined}
+              >
                 {name} <span className="opacity-70">({count})</span>
               </span>
             );
@@ -339,9 +503,12 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
           <p className="text-xs text-gray-400 mb-4">
             Green = dense coverage · Orange = moderate · Red = sparse · Gray = no orgs tagged for that region.
           </p>
-          <CauseRegionMatrix orgs={orgs} />
+          <CauseRegionMatrix orgs={orgs} onNavigate={navigate} />
         </div>
       )}
+
+      {/* ── Admin: Feedback inbox ── */}
+      {adminMode && <FeedbackInbox />}
     </div>
   );
 }

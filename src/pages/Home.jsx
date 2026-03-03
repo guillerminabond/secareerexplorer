@@ -9,7 +9,8 @@ import OrgModal from "@/components/explore/OrgModal";
 import OrgForm from "@/components/admin/OrgForm";
 import QuizExplore from "@/components/explore/QuizExplore";
 import NominateModal from "@/components/NominateModal";
-import { Search, Download, SlidersHorizontal, LayoutGrid, List, Lock, Plus, X, Pencil, Trash2, Lightbulb, ChevronDown, Star } from "lucide-react";
+import FeedbackModal from "@/components/FeedbackModal";
+import { Search, Download, SlidersHorizontal, LayoutGrid, List, Lock, Plus, X, Pencil, Trash2, Lightbulb, ChevronDown, Star, MessageSquare } from "lucide-react";
 
 import OrgTable from "@/components/explore/OrgTable";
 import LearnMorePage from "@/components/learnmore/LearnMorePage";
@@ -342,6 +343,7 @@ export default function Home() {
   const [showAdminAuth, setShowAdminAuth] = useState(false);
   const [editingOrg, setEditingOrg] = useState(undefined);
   const [showNominate, setShowNominate] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [nominations, setNominations] = useState([]);
   const [approvingNomId, setApprovingNomId] = useState(null);
 
@@ -584,6 +586,14 @@ export default function Home() {
     setShowOrgMenu(false);
   };
 
+  // Navigate to Database tab with pre-applied filters (used by dashboard chart clicks)
+  const goToDbWithFilters = (f) => {
+    setFilters(f);
+    setTab("All Organizations");
+    setAllOrgsSubTab("Database");
+    setShowOrgMenu(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Header ─────────────────────────────────────────── */}
@@ -696,8 +706,18 @@ export default function Home() {
             </button>
           </div>
 
-          {/* Admin toggle — always pinned to right, never scrolls away */}
-          <div className="flex-shrink-0 border-l border-gray-100 px-3 sm:px-4 self-stretch flex items-center">
+          {/* Feedback + Admin — always pinned to right, never scrolls away */}
+          <div className="flex-shrink-0 border-l border-gray-100 px-3 sm:px-4 self-stretch flex items-center gap-2">
+            {/* Feedback button */}
+            <button
+              onClick={() => setShowFeedback(true)}
+              title="Send feedback"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border text-gray-400 border-gray-200 hover:text-crimson hover:border-crimson/40 hover:bg-red-50"
+            >
+              <MessageSquare className="w-3 h-3" />
+              <span className="hidden sm:inline">Feedback</span>
+            </button>
+
             <button
               onClick={handleAdminToggle}
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
@@ -734,6 +754,7 @@ export default function Home() {
             nominations={nominations}
             onApprove={handleApproveNomination}
             onReject={handleRejectNomination}
+            onNavigate={goToDbWithFilters}
           />
         )}
 
@@ -1119,6 +1140,7 @@ export default function Home() {
         />
       )}
       {showNominate && <NominateModal onClose={() => setShowNominate(false)} />}
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
     </div>
   );
 }
