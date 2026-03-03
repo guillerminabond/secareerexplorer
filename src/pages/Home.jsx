@@ -319,7 +319,9 @@ export default function Home() {
   const [tab, setTab] = useState("Explore");
   const [allOrgsSubTab, setAllOrgsSubTab] = useState("Database");
   const [showOrgMenu, setShowOrgMenu] = useState(false);
+  const [orgMenuPos, setOrgMenuPos] = useState({ top: 0, left: 0 });
   const orgMenuRef = useRef(null);
+  const orgDropdownRef = useRef(null);
 
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -376,7 +378,9 @@ export default function Home() {
   useEffect(() => {
     if (!showOrgMenu) return;
     const handler = e => {
-      if (orgMenuRef.current && !orgMenuRef.current.contains(e.target)) setShowOrgMenu(false);
+      const inButton   = orgMenuRef.current?.contains(e.target);
+      const inDropdown = orgDropdownRef.current?.contains(e.target);
+      if (!inButton && !inDropdown) setShowOrgMenu(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -609,10 +613,15 @@ export default function Home() {
             </button>
 
             {/* All Organizations — dropdown */}
-            <div className="relative flex-shrink-0" ref={orgMenuRef}>
+            <div className="flex-shrink-0" ref={orgMenuRef}>
               <button
                 onClick={() => {
                   if (tab !== "All Organizations") setTab("All Organizations");
+                  // Capture button position so the fixed dropdown can align to it
+                  if (orgMenuRef.current) {
+                    const r = orgMenuRef.current.getBoundingClientRect();
+                    setOrgMenuPos({ top: r.bottom + 4, left: r.left });
+                  }
                   setShowOrgMenu(p => !p);
                 }}
                 className={`my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
@@ -634,7 +643,11 @@ export default function Home() {
               </button>
 
               {showOrgMenu && (
-                <div className="absolute top-full mt-1 left-0 bg-white border border-gray-100 rounded-xl shadow-lg z-20 min-w-[210px] py-1.5 overflow-hidden">
+                <div
+                  ref={orgDropdownRef}
+                  style={{ position: "fixed", top: orgMenuPos.top, left: orgMenuPos.left, zIndex: 50 }}
+                  className="bg-white border border-gray-100 rounded-xl shadow-lg min-w-[210px] py-1.5 overflow-hidden"
+                >
                   {ALL_ORGS_SUBTABS.map(sub => {
                     const isActive = tab === "All Organizations" && allOrgsSubTab === sub;
                     const label = sub === "Dashboard" && adminMode ? "Admin Dashboard" : sub;
