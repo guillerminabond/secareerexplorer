@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { ArrowLeft, RotateCcw, ChevronRight, Shuffle, Search, X } from "lucide-react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
+import { ArrowLeft, RotateCcw, ChevronRight, Shuffle, Search, X, Info } from "lucide-react";
 import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
 import OrgCard from "./OrgCard";
 import OrgModal from "./OrgModal";
@@ -187,22 +187,98 @@ const FILTER_LABELS = {
   regions: "Regions", target_populations: "Target Populations",
 };
 
+// ── Brief descriptions for each quiz option ───────────────────────────────────
+const DESCRIPTIONS = {
+  // Cause areas
+  "Poverty Alleviation":      "Reducing extreme deprivation through direct services, cash transfers, and systems change.",
+  "Economic Development":     "Strengthening local economies, job creation, and livelihoods in underserved communities.",
+  "Global Health":            "Improving health outcomes worldwide through prevention, treatment, and health systems strengthening.",
+  "Education":                "Expanding access to quality learning from early childhood through higher education.",
+  "Climate & Energy":         "Addressing climate change through clean energy, conservation, and emissions reduction.",
+  "Gender & Social Justice":  "Advancing equity for women, marginalized groups, and underserved communities.",
+  "Financial Inclusion":      "Expanding access to banking, credit, and financial services for the unbanked.",
+  "Housing & Community":      "Creating affordable housing and building strong, resilient communities.",
+  "Arts & Culture":           "Using creative expression and cultural work to drive social change.",
+  // Org types
+  "Nonprofit":                        "Mission-driven organizations reinvesting all revenue into their programs and services.",
+  "Impact Investing / Foundation":    "Entities deploying capital to generate measurable social and financial returns.",
+  "Hybrid":                           "Organizations blending nonprofit and for-profit models (e.g., PBCs, L3Cs).",
+  "B Corporation":                    "Certified for-profit companies meeting high standards of social and environmental performance.",
+  "Government / Public Sector":       "Government agencies and public institutions driving policy-led social outcomes.",
+  "Cooperative":                      "Member-owned organizations sharing profits and decision-making democratically.",
+  // Role types
+  "Operator":             "Organizations directly delivering programs and services on the ground.",
+  "Funder":               "Foundations and investors providing grants or capital to other organizations.",
+  "Enabler":              "Organizations building the capacity, tools, and infrastructure for the broader sector.",
+  "Advocacy & Policy":    "Influencing laws, regulations, and systems to drive systemic change at scale.",
+  // Regions
+  "North America":    "United States, Canada, Mexico, and the Caribbean.",
+  "Latin America":    "Central and South America, from Mexico through Patagonia.",
+  "Europe":           "Western, Eastern, and Northern European countries.",
+  "Africa":           "Sub-Saharan, East, West, and North African countries.",
+  "Middle East":      "The Arab world, Israel, Turkey, and surrounding regions.",
+  "Asia":             "South Asia, East Asia, and Southeast Asia.",
+  "Oceania":          "Australia, New Zealand, and Pacific Island nations.",
+  "Global":           "Organizations with programs spanning multiple continents.",
+  // Target populations
+  "People in Poverty":    "Communities facing extreme or relative poverty and economic hardship.",
+  "Women & Girls":        "Programs specifically advancing the rights and opportunities of women and girls.",
+  "Children":             "Serving children from birth through early adolescence.",
+  "Youth & Teenagers":    "Programming for teens and young adults ages 13–24.",
+  "Smallholder Farmers":  "Supporting agricultural smallholders and rural communities.",
+  "Migrants & Refugees":  "Serving displaced people and those navigating migration.",
+  "Families":             "Holistic support for family units and households.",
+};
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 function OptionButton({ label, selected, onClick }) {
+  const desc = DESCRIPTIONS[label];
+  const [showInfo, setShowInfo] = useState(false);
+  const wrapRef = useRef(null);
+
+  // Close popover on outside click
+  useEffect(() => {
+    if (!showInfo) return;
+    const handler = (e) => { if (!wrapRef.current?.contains(e.target)) setShowInfo(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showInfo]);
+
   return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all text-left flex items-center gap-2 ${
-        selected
-          ? "bg-crimson text-white border-crimson shadow-sm"
-          : "bg-white text-gray-700 border-gray-200 hover:border-crimson hover:text-crimson"
-      }`}
-    >
-      <span className={`inline-flex w-4 h-4 rounded border flex-shrink-0 items-center justify-center text-xs ${selected ? "bg-white border-white text-crimson" : "border-gray-300"}`}>
-        {selected ? "✓" : ""}
-      </span>
-      {label}
-    </button>
+    <div ref={wrapRef} className="relative inline-flex items-center">
+      <button
+        onClick={onClick}
+        className={`${desc ? "pr-7" : "pr-4"} pl-4 py-2.5 rounded-xl border text-sm font-medium transition-all text-left flex items-center gap-2 ${
+          selected
+            ? "bg-crimson text-white border-crimson shadow-sm"
+            : "bg-white text-gray-700 border-gray-200 hover:border-crimson hover:text-crimson"
+        }`}
+      >
+        <span className={`inline-flex w-4 h-4 rounded border flex-shrink-0 items-center justify-center text-xs ${selected ? "bg-white border-white text-crimson" : "border-gray-300"}`}>
+          {selected ? "✓" : ""}
+        </span>
+        {label}
+      </button>
+
+      {desc && (
+        <button
+          onClick={e => { e.stopPropagation(); setShowInfo(v => !v); }}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-full transition-colors ${
+            selected ? "text-white/60 hover:text-white" : "text-gray-300 hover:text-crimson/60"
+          }`}
+          title={`About: ${label}`}
+        >
+          <Info className="w-3 h-3" />
+        </button>
+      )}
+
+      {showInfo && desc && (
+        <div className="absolute bottom-full left-0 mb-2 z-50 bg-white border border-gray-100 rounded-xl shadow-lg p-3 w-56 text-xs text-gray-600 leading-relaxed pointer-events-none">
+          <p className="font-semibold text-gray-800 mb-1">{label}</p>
+          <p>{desc}</p>
+        </div>
+      )}
+    </div>
   );
 }
 

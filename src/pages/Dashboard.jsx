@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { fetchOrgs } from "@/api/organizationsApi";
 import OrgDashboard from "@/components/dashboard/OrgDashboard";
 
 export default function Dashboard() {
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrgs()
@@ -12,6 +14,11 @@ export default function Dashboard() {
       .catch(err => console.error("Error fetching organizations:", err))
       .finally(() => setLoading(false));
   }, []);
+
+  // Clicking a chart item navigates to the database pre-filtered
+  const handleNavigate = (filters) => {
+    navigate("/all-orgs/database", { state: { filters } });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -23,7 +30,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <OrgDashboard orgs={orgs} />
+          <OrgDashboard orgs={orgs} onNavigate={handleNavigate} />
         )}
       </div>
     </div>

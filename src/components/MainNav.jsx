@@ -17,6 +17,7 @@ export default function MainNav() {
   const isAllOrgsActive   = p.startsWith("/all-orgs");
   const isLearnMoreActive = p.startsWith("/learn-more");
   const isResourcesActive = p.startsWith("/resources");
+  const isHowToUseActive  = p.startsWith("/how-to-use");
 
   const tabCls = (active) =>
     `flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
@@ -49,6 +50,11 @@ export default function MainNav() {
             {/* Resources */}
             <button onClick={() => navigate("/resources")} className={tabCls(isResourcesActive)}>
               Resources
+            </button>
+
+            {/* How to Use */}
+            <button onClick={() => navigate("/how-to-use")} className={tabCls(isHowToUseActive)}>
+              How to Use
             </button>
           </div>
 

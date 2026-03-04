@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark } from "lucide-react";
 import { fetchOrgs, updateSavesCount } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
@@ -25,9 +25,18 @@ function getValuesAsArray(val) {
 
 export default function AllOrgs() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({});
+  // Pre-populate filters if navigated here from the dashboard
+  const [filters, setFilters] = useState(() => location.state?.filters || {});
+
+  useEffect(() => {
+    // Clear router state after consuming it so back-nav doesn't re-apply stale filters
+    if (location.state?.filters) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [search, setSearch] = useState("");
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [savedIds, setSavedIds] = useState(() => {
@@ -37,7 +46,7 @@ export default function AllOrgs() {
       return [];
     }
   });
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => !!(location.state?.filters && Object.keys(location.state.filters).length > 0));
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [viewMode, setViewMode] = useState(() =>
     typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"

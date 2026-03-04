@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import LearnMore from "./pages/LearnMore";
 import Resources from "./pages/Resources";
 import Admin from "./pages/Admin";
+import HowToUse from "./pages/HowToUse";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -82,6 +83,16 @@ function App() {
             element={
               <LayoutWrapper currentPageName="Resources">
                 <Resources />
+              </LayoutWrapper>
+            }
+          />
+
+          {/* ── How to Use ───────────────────────────────────── */}
+          <Route
+            path="/how-to-use"
+            element={
+              <LayoutWrapper currentPageName="How to Use">
+                <HowToUse />
               </LayoutWrapper>
             }
           />
