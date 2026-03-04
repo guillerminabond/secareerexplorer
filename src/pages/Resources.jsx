@@ -6,9 +6,12 @@ import { useAdmin } from "@/contexts/AdminContext";
 // ── Resource tag taxonomy ─────────────────────────────────────
 const RESOURCE_TAG_GROUPS = {
   "Org Type": ["Nonprofit", "Foundation", "Impact Investing", "Social Enterprise", "B Corp", "Startup"],
-  "Geography": ["Global", "North America", "Europe"],
+  "Geography": ["Global", "North America", "Latin America", "Europe", "Africa", "Middle East", "Asia Pacific"],
   "Function": ["Career Support", "Research", "Mentorship", "Alumni", "Fellowship", "Funding", "Community"],
 };
+
+// Geography tags as a set — used for "Global" wildcard logic in filtering
+const GEO_TAGS = new Set(RESOURCE_TAG_GROUPS["Geography"]);
 
 // Tags sorted Function → Org Type → Geography (most actionable first)
 const TAG_PRIORITY = [
@@ -26,6 +29,18 @@ function sortTagsByPriority(tags = []) {
     if (bi === -1) return -1;
     return ai - bi;
   });
+}
+
+// A resource matches the active filters when:
+//   • any of its tags match a selected filter (standard OR logic), OR
+//   • it is tagged "Global" and at least one geography filter is active
+//     (Global resources are universally applicable — they surface for any region)
+function resourceMatchesFilters(r, activeFilters) {
+  if (activeFilters.length === 0) return true;
+  const tags = r.tags || [];
+  if (tags.some(t => activeFilters.includes(t))) return true;
+  if (activeFilters.some(t => GEO_TAGS.has(t)) && tags.includes("Global")) return true;
+  return false;
 }
 
 // ── Default resource seeds ────────────────────────────────────
@@ -211,16 +226,12 @@ export default function Resources() {
     setResourceTagFilters(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
 
   const filteredGeneralResources = useMemo(() => {
-    const out = resourceTagFilters.length === 0
-      ? [...generalResources]
-      : generalResources.filter(r => (r.tags || []).some(t => resourceTagFilters.includes(t)));
+    const out = generalResources.filter(r => resourceMatchesFilters(r, resourceTagFilters));
     return out.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
   }, [generalResources, resourceTagFilters]);
 
   const filteredHbsResources = useMemo(() => {
-    const out = resourceTagFilters.length === 0
-      ? [...hbsResources]
-      : hbsResources.filter(r => (r.tags || []).some(t => resourceTagFilters.includes(t)));
+    const out = hbsResources.filter(r => resourceMatchesFilters(r, resourceTagFilters));
     return out.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
   }, [hbsResources, resourceTagFilters]);
 
