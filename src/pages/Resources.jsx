@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Star, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Star, Plus, Pencil, Trash2, X, SlidersHorizontal } from "lucide-react";
 import { fetchContent, upsertContent } from "@/api/contentApi";
 import { useAdmin } from "@/contexts/AdminContext";
 
@@ -9,6 +9,24 @@ const RESOURCE_TAG_GROUPS = {
   "Geography": ["Global", "North America", "Europe"],
   "Function": ["Career Support", "Research", "Mentorship", "Alumni", "Fellowship", "Funding", "Community"],
 };
+
+// Tags sorted Function → Org Type → Geography (most actionable first)
+const TAG_PRIORITY = [
+  ...RESOURCE_TAG_GROUPS["Function"],
+  ...RESOURCE_TAG_GROUPS["Org Type"],
+  ...RESOURCE_TAG_GROUPS["Geography"],
+];
+
+function sortTagsByPriority(tags = []) {
+  return [...tags].sort((a, b) => {
+    const ai = TAG_PRIORITY.indexOf(a);
+    const bi = TAG_PRIORITY.indexOf(b);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  });
+}
 
 // ── Default resource seeds ────────────────────────────────────
 const DEFAULT_GENERAL_RESOURCES = [
@@ -180,6 +198,9 @@ export default function Resources() {
   const [editingResource, setEditingResource] = useState(null);
   const [savingResource, setSavingResource] = useState(false);
   const [resourceTagFilters, setResourceTagFilters] = useState([]);
+  const [showFilters, setShowFilters] = useState(false);
+  // Track which cards have their overflow tags expanded
+  const [expandedTags, setExpandedTags] = useState({});
 
   useEffect(() => {
     fetchContent("general_resources").then(data => { if (data) setGeneralResources(data); }).catch(() => {});
@@ -254,41 +275,62 @@ export default function Resources() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
 
-        {/* ── Tag filter bar ──────────────────────────────────── */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Filter resources</p>
-            {resourceTagFilters.length > 0 && (
+        {/* ── Filter toggle + collapsible panel ───────────────── */}
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setShowFilters(f => !f)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                showFilters || resourceTagFilters.length > 0
+                  ? "border-crimson text-crimson bg-crimson/5"
+                  : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filter{resourceTagFilters.length > 0 ? ` (${resourceTagFilters.length})` : ""}
+            </button>
+
+            {/* Active filter chips — visible even when panel is collapsed */}
+            {resourceTagFilters.map(tag => (
+              <button
+                key={tag}
+                onClick={() => toggleResourceTag(tag)}
+                className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-crimson/10 text-crimson border border-crimson/20 hover:bg-crimson/20 transition-colors"
+              >
+                {tag} <X className="w-3 h-3" />
+              </button>
+            ))}
+            {resourceTagFilters.length > 1 && (
               <button onClick={() => setResourceTagFilters([])} className="text-xs text-gray-400 hover:text-gray-600 underline">
                 Clear all
               </button>
             )}
           </div>
-          <div className="space-y-2.5">
-            {Object.entries(RESOURCE_TAG_GROUPS).map(([group, tags]) => (
-              <div key={group} className="flex items-start gap-2 sm:gap-3">
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-14 sm:w-16 shrink-0 pt-1.5">{group}</span>
-                <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
-                  {tags.map(tag => {
-                    const active = resourceTagFilters.includes(tag);
-                    return (
-                      <button key={tag} onClick={() => toggleResourceTag(tag)}
-                        className={`flex-shrink-0 text-xs px-2.5 py-1.5 rounded-full border transition-colors min-h-[32px] ${
-                          active ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-500 border-gray-200 hover:border-[#A51C30]/50 hover:text-[#A51C30]"
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
+
+          {showFilters && (
+            <div className="mt-2 bg-white border border-gray-100 rounded-xl p-4">
+              <div className="space-y-2.5">
+                {Object.entries(RESOURCE_TAG_GROUPS).map(([group, tags]) => (
+                  <div key={group} className="flex items-start gap-2 sm:gap-3">
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-14 sm:w-16 shrink-0 pt-1.5">{group}</span>
+                    <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
+                      {tags.map(tag => {
+                        const active = resourceTagFilters.includes(tag);
+                        return (
+                          <button key={tag} onClick={() => toggleResourceTag(tag)}
+                            className={`flex-shrink-0 text-xs px-2.5 py-1.5 rounded-full border transition-colors min-h-[32px] ${
+                              active ? "bg-crimson text-white border-crimson" : "bg-white text-gray-500 border-gray-200 hover:border-crimson/50 hover:text-crimson"
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {resourceTagFilters.length > 0 && (
-            <p className="text-xs text-gray-400 mt-2.5">
-              Showing resources matching any of:{resourceTagFilters.map(t => <strong key={t} className="text-gray-600"> {t}</strong>)}
-            </p>
+            </div>
           )}
         </div>
 
@@ -362,18 +404,32 @@ export default function Resources() {
                         </ul>
                       </div>
                     )}
-                    {(r.tags || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {r.tags.map(tag => (
-                          <button key={tag} onClick={() => { if (!resourceTagFilters.includes(tag)) toggleResourceTag(tag); }}
-                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
-                              resourceTagFilters.includes(tag) ? "bg-[#A51C30]/10 text-[#A51C30] border-[#A51C30]/20" : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300 hover:text-gray-600"
-                            }`}>
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {(r.tags || []).length > 0 && (() => {
+                      const cardKey = `gen-${realIndex}`;
+                      const sorted = sortTagsByPriority(r.tags);
+                      const visible = expandedTags[cardKey] ? sorted : sorted.slice(0, 3);
+                      const overflow = sorted.length - 3;
+                      return (
+                        <div className="flex flex-wrap gap-1 items-center">
+                          {visible.map(tag => (
+                            <button key={tag} onClick={() => { if (!resourceTagFilters.includes(tag)) toggleResourceTag(tag); }}
+                              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                                resourceTagFilters.includes(tag) ? "bg-crimson/10 text-crimson border-crimson/20" : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300 hover:text-gray-600"
+                              }`}>
+                              {tag}
+                            </button>
+                          ))}
+                          {!expandedTags[cardKey] && overflow > 0 && (
+                            <button
+                              onClick={() => setExpandedTags(e => ({ ...e, [cardKey]: true }))}
+                              className="text-[10px] px-2 py-0.5 rounded-full border border-gray-100 bg-gray-50 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors"
+                            >
+                              +{overflow}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-crimson hover:underline">
                       {r.cta} →
                     </a>
@@ -438,18 +494,32 @@ export default function Resources() {
                       <h3 className="font-semibold text-gray-900 text-sm mb-1 group-hover/link:text-crimson transition-colors">{r.title} →</h3>
                       <p className="text-xs text-gray-500 mb-2">{r.desc}</p>
                     </a>
-                    {(r.tags || []).length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {r.tags.map(tag => (
-                          <button key={tag} onClick={() => { if (!resourceTagFilters.includes(tag)) toggleResourceTag(tag); }}
-                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
-                              resourceTagFilters.includes(tag) ? "bg-[#A51C30]/10 text-[#A51C30] border-[#A51C30]/20" : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300 hover:text-gray-600"
-                            }`}>
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {(r.tags || []).length > 0 && (() => {
+                      const cardKey = `hbs-${realIndex}`;
+                      const sorted = sortTagsByPriority(r.tags);
+                      const visible = expandedTags[cardKey] ? sorted : sorted.slice(0, 3);
+                      const overflow = sorted.length - 3;
+                      return (
+                        <div className="flex flex-wrap gap-1 mt-1 items-center">
+                          {visible.map(tag => (
+                            <button key={tag} onClick={() => { if (!resourceTagFilters.includes(tag)) toggleResourceTag(tag); }}
+                              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                                resourceTagFilters.includes(tag) ? "bg-crimson/10 text-crimson border-crimson/20" : "bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-300 hover:text-gray-600"
+                              }`}>
+                              {tag}
+                            </button>
+                          ))}
+                          {!expandedTags[cardKey] && overflow > 0 && (
+                            <button
+                              onClick={() => setExpandedTags(e => ({ ...e, [cardKey]: true }))}
+                              className="text-[10px] px-2 py-0.5 rounded-full border border-gray-100 bg-gray-50 text-gray-400 hover:text-gray-600 hover:border-gray-300 transition-colors"
+                            >
+                              +{overflow}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
