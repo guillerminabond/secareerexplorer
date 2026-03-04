@@ -15,7 +15,7 @@ const SECTIONS = [
     steps: [
       {
         heading: "Free-text search",
-        body: "Type anything in the search bar — e.g. "climate nonprofit in Africa" or "education funder Asia". Results are ranked by relevance across org name, type, cause, region, and description.",
+        body: "Type anything in the search bar — e.g. \"climate nonprofit in Africa\" or \"education funder Asia\". Results are ranked by relevance across org name, type, cause, region, and description.",
       },
       {
         heading: "Guided quiz",
@@ -31,7 +31,7 @@ const SECTIONS = [
       },
       {
         heading: "Surprise me",
-        body: "Hit the "Surprise me" button on the home screen to get a random organization you haven't saved yet — good for serendipitous discovery.",
+        body: "Hit the \"Surprise me\" button on the home screen to get a random organization you haven't saved yet — good for serendipitous discovery.",
       },
     ],
   },
