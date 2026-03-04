@@ -1,5 +1,5 @@
 import React from "react";
-import { X, ExternalLink, Pencil } from "lucide-react";
+import { X, ExternalLink, Pencil, Users, Award, Lightbulb } from "lucide-react";
 
 const Section = ({ label, value }) => {
   if (!value) return null;
@@ -25,6 +25,25 @@ const Tags = ({ label, items }) => {
   );
 };
 
+// ── HBS badge chips ───────────────────────────────────────────
+function OrgBadges({ org }) {
+  const badges = [
+    org.badge_alumni_work_here   && { label: "Alumni Work Here",   color: "bg-indigo-50 text-indigo-700 border-indigo-100", icon: <Users className="w-3 h-3" /> },
+    org.badge_fellowship_partner && { label: "Fellowship Partner", color: "bg-blue-50 text-blue-700 border-blue-100",       icon: <Award className="w-3 h-3" /> },
+    org.badge_hbs_founder        && { label: "HBS Founder",        color: "bg-amber-50 text-amber-700 border-amber-100",   icon: <Lightbulb className="w-3 h-3" /> },
+  ].filter(Boolean);
+  if (!badges.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {badges.map(b => (
+        <span key={b.label} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${b.color}`}>
+          {b.icon}{b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function OrgModal({ org, onClose, onEdit }) {
   if (!org) return null;
 
@@ -39,6 +58,12 @@ export default function OrgModal({ org, onClose, onEdit }) {
             <div className="flex-1 min-w-0 mr-4">
               <h2 className="text-xl font-bold text-gray-900">{org.name}</h2>
               <p className="text-sm text-gray-500">{org.org_type}</p>
+              <OrgBadges org={org} />
+              {org.saves > 0 && (
+                <p className="text-xs text-gray-400 mt-1.5">
+                  {org.saves} student{org.saves !== 1 ? "s" : ""} saved this
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {onEdit && (

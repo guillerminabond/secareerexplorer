@@ -1,5 +1,24 @@
 import React, { useState } from "react";
-import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2, Users, Award, Lightbulb } from "lucide-react";
+
+// ── HBS badge chips ───────────────────────────────────────────
+function OrgBadges({ org }) {
+  const badges = [
+    org.badge_alumni_work_here  && { label: "Alumni Work Here",    color: "bg-indigo-50 text-indigo-700", icon: <Users className="w-2.5 h-2.5" /> },
+    org.badge_fellowship_partner && { label: "Fellowship Partner",  color: "bg-blue-50 text-blue-700",   icon: <Award className="w-2.5 h-2.5" /> },
+    org.badge_hbs_founder        && { label: "HBS Founder",         color: "bg-amber-50 text-amber-700", icon: <Lightbulb className="w-2.5 h-2.5" /> },
+  ].filter(Boolean);
+  if (!badges.length) return null;
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1">
+      {badges.map(b => (
+        <span key={b.label} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${b.color}`}>
+          {b.icon}{b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -13,6 +32,7 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-sm leading-tight">{org.name}</h3>
           <p className="text-xs text-gray-500 mt-0.5">{org.org_type}</p>
+          <OrgBadges org={org} />
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onSave(org.id); }}
@@ -32,6 +52,12 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
           ))}
         </div>
       }
+
+      {org.saves > 0 && (
+        <p className="text-[10px] text-gray-400 mt-2">
+          {org.saves} student{org.saves !== 1 ? "s" : ""} saved this
+        </p>
+      )}
 
       <div className="mt-3 flex items-center justify-between">
         {/* Admin actions */}

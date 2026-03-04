@@ -1,5 +1,24 @@
 import React, { useState } from "react";
-import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2 } from "lucide-react";
+import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2, Users, Award, Lightbulb } from "lucide-react";
+
+// ── Inline badge chips for table rows ────────────────────────
+function RowBadges({ org }) {
+  const badges = [
+    org.badge_alumni_work_here   && { label: "Alumni",     color: "bg-indigo-50 text-indigo-600", icon: <Users className="w-2.5 h-2.5" /> },
+    org.badge_fellowship_partner && { label: "Fellowship", color: "bg-blue-50 text-blue-600",     icon: <Award className="w-2.5 h-2.5" /> },
+    org.badge_hbs_founder        && { label: "Founder",    color: "bg-amber-50 text-amber-600",   icon: <Lightbulb className="w-2.5 h-2.5" /> },
+  ].filter(Boolean);
+  if (!badges.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1 mt-0.5">
+      {badges.map(b => (
+        <span key={b.label} className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${b.color}`}>
+          {b.icon}{b.label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function TagList({ items, colorClass = "bg-crimson/10 text-crimson" }) {
   if (!items?.length) return null;
@@ -94,6 +113,7 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
                 {org.description && (
                   <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs hidden sm:block">{org.description}</p>
                 )}
+                <RowBadges org={org} />
                 {/* Show type inline on mobile since the Type column is hidden */}
                 {org.org_type && (
                   <span className="mt-1 inline-block sm:hidden px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{org.org_type}</span>

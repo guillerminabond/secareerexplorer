@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
-import { fetchOrgs } from "@/api/organizationsApi";
+import { fetchOrgs, updateSavesCount } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
 import FilterBar from "@/components/explore/FilterBar";
 import OrgTable from "@/components/explore/OrgTable";
@@ -49,10 +49,18 @@ export default function AllOrgs() {
 
   const toggleSave = (id) => {
     setSavedIds((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id];
+      const isCurrentlySaved = prev.includes(id);
+      const delta = isCurrentlySaved ? -1 : 1;
+      const next = isCurrentlySaved ? prev.filter((i) => i !== id) : [...prev, id];
       localStorage.setItem("hbs_saved_orgs", JSON.stringify(next));
+      // Update server-side saves counter atomically
+      updateSavesCount(id, delta);
+      // Optimistically update local org saves count so UI reflects change immediately
+      setOrgs(prevOrgs =>
+        prevOrgs.map(o =>
+          o.id === id ? { ...o, saves: Math.max(0, (o.saves || 0) + delta) } : o
+        )
+      );
       return next;
     });
   };

@@ -180,6 +180,38 @@ export default function OrgForm({ org, onSave, onCancel }) {
         <input className={inputClass} value={form.notable_alumni} onChange={e => set("notable_alumni", e.target.value)} />
       </Field>
 
+      <Field label="HBS Badges (admin-verified)">
+        <div className="flex flex-wrap gap-4 pt-1">
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.badge_alumni_work_here || false}
+              onChange={e => set("badge_alumni_work_here", e.target.checked)}
+              className="accent-crimson"
+            />
+            <span className="text-indigo-700 font-medium">Alumni Work Here</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.badge_fellowship_partner || false}
+              onChange={e => set("badge_fellowship_partner", e.target.checked)}
+              className="accent-crimson"
+            />
+            <span className="text-blue-700 font-medium">HBS Fellowship Partner</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={form.badge_hbs_founder || false}
+              onChange={e => set("badge_hbs_founder", e.target.checked)}
+              className="accent-crimson"
+            />
+            <span className="text-amber-700 font-medium">HBS Founder</span>
+          </label>
+        </div>
+      </Field>
+
       <div className="flex gap-3 pt-2">
         <button
           onClick={handleSave}

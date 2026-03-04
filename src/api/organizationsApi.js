@@ -25,6 +25,10 @@ const ORG_SELECT = `
   hbs_note,
   notable_alumni,
   created_date,
+  saves,
+  badge_alumni_work_here,
+  badge_fellowship_partner,
+  badge_hbs_founder,
   org_type:org_types(id, name),
   employee_range:employee_ranges(id, label),
   org_cause_areas:organization_cause_areas(cause_area:cause_areas(id, name)),
@@ -37,14 +41,19 @@ const ORG_SELECT = `
 function transformOrg(row) {
   return {
     ...row,
-    org_type:           row.org_type?.name        ?? '',
-    org_type_id:        row.org_type?.id           ?? null,
-    employees:          row.employee_range?.label  ?? '',
-    employee_range_id:  row.employee_range?.id     ?? null,
-    cause_areas:        (row.org_cause_areas        ?? []).map(x => x.cause_area.name),
-    role_types:         (row.org_role_types         ?? []).map(x => x.role_type.name),
-    regions:            (row.org_regions            ?? []).map(x => x.region.name),
-    target_populations: (row.org_target_populations ?? []).map(x => x.target_population.name),
+    org_type:               row.org_type?.name        ?? '',
+    org_type_id:            row.org_type?.id           ?? null,
+    employees:              row.employee_range?.label  ?? '',
+    employee_range_id:      row.employee_range?.id     ?? null,
+    cause_areas:            (row.org_cause_areas        ?? []).map(x => x.cause_area.name),
+    role_types:             (row.org_role_types         ?? []).map(x => x.role_type.name),
+    regions:                (row.org_regions            ?? []).map(x => x.region.name),
+    target_populations:     (row.org_target_populations ?? []).map(x => x.target_population.name),
+    // scalar fields — passed through as-is
+    saves:                  row.saves                  ?? 0,
+    badge_alumni_work_here:  row.badge_alumni_work_here  ?? false,
+    badge_fellowship_partner: row.badge_fellowship_partner ?? false,
+    badge_hbs_founder:       row.badge_hbs_founder       ?? false,
     // remove raw join fields
     org_cause_areas: undefined,
     org_role_types: undefined,
@@ -96,17 +105,20 @@ export async function createOrg(form) {
   const { data, error } = await supabase
     .from('organizations')
     .insert({
-      name:              form.name,
-      description:       form.description,
-      website:           form.website,
-      org_type_id:       orgTypeId,
-      employee_range_id: employeeRangeId,
-      size:              form.size,
-      hq:                form.hq,
-      year_established:  form.year_established,
-      hbs_note:          form.hbs_note,
-      notable_alumni:    form.notable_alumni,
-      created_date:      new Date().toISOString(),
+      name:                    form.name,
+      description:             form.description,
+      website:                 form.website,
+      org_type_id:             orgTypeId,
+      employee_range_id:       employeeRangeId,
+      size:                    form.size,
+      hq:                      form.hq,
+      year_established:        form.year_established,
+      hbs_note:                form.hbs_note,
+      notable_alumni:          form.notable_alumni,
+      created_date:            new Date().toISOString(),
+      badge_alumni_work_here:  form.badge_alumni_work_here  || false,
+      badge_fellowship_partner: form.badge_fellowship_partner || false,
+      badge_hbs_founder:       form.badge_hbs_founder       || false,
     })
     .select('id')
     .single()
@@ -125,21 +137,34 @@ export async function updateOrg(id, form) {
   const { error } = await supabase
     .from('organizations')
     .update({
-      name:              form.name,
-      description:       form.description,
-      website:           form.website,
-      org_type_id:       orgTypeId,
-      employee_range_id: employeeRangeId,
-      size:              form.size,
-      hq:                form.hq,
-      year_established:  form.year_established,
-      hbs_note:          form.hbs_note,
-      notable_alumni:    form.notable_alumni,
+      name:                    form.name,
+      description:             form.description,
+      website:                 form.website,
+      org_type_id:             orgTypeId,
+      employee_range_id:       employeeRangeId,
+      size:                    form.size,
+      hq:                      form.hq,
+      year_established:        form.year_established,
+      hbs_note:                form.hbs_note,
+      notable_alumni:          form.notable_alumni,
+      badge_alumni_work_here:  form.badge_alumni_work_here  || false,
+      badge_fellowship_partner: form.badge_fellowship_partner || false,
+      badge_hbs_founder:       form.badge_hbs_founder       || false,
     })
     .eq('id', id)
   if (error) throw error
 
   await _saveJunctions(id, form)
+}
+
+/**
+ * Atomically increment (+1) or decrement (-1) the saves counter for an org.
+ * Requires the `increment_saves` RPC to be deployed in Supabase.
+ * Fails silently so a missing RPC doesn't break the save UX.
+ */
+export async function updateSavesCount(orgId, delta) {
+  const { error } = await supabase.rpc('increment_saves', { org_id: orgId, delta })
+  if (error) console.warn('updateSavesCount failed (run add_saves_and_badges.sql):', error.message)
 }
 
 /** Delete an organization (junction rows cascade automatically) */
