@@ -23,6 +23,14 @@ export default function Layout({ children }) {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
+      {/* ── Site header ─────────────────────────────────── */}
+      <div className="bg-crimson text-white px-6 py-3">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs font-medium tracking-wide uppercase text-crimson-100 mb-0.5">Harvard Business School</p>
+          <h1 className="text-lg font-bold leading-tight">Social Enterprise Career Explorer</h1>
+        </div>
+      </div>
+
       <MainNav />
       {children}
     </div>

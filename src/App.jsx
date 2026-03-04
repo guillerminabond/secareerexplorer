@@ -10,6 +10,7 @@ import Nominate from "./pages/Nominate";
 import Dashboard from "./pages/Dashboard";
 import LearnMore from "./pages/LearnMore";
 import Resources from "./pages/Resources";
+import Admin from "./pages/Admin";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -80,6 +81,16 @@ function App() {
             element={
               <LayoutWrapper currentPageName="Resources">
                 <Resources />
+              </LayoutWrapper>
+            }
+          />
+
+          {/* ── Admin ────────────────────────────────────────── */}
+          <Route
+            path="/admin"
+            element={
+              <LayoutWrapper currentPageName="Admin">
+                <Admin />
               </LayoutWrapper>
             }
           />
