@@ -286,15 +286,6 @@ export default function Resources() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
-        {/* Admin toggle */}
-        <div className="flex justify-end">
-          <button
-            onClick={() => adminMode ? setAdminMode(false) : setShowAdminAuth(true)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${adminMode ? "bg-crimson text-white border-crimson" : "border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500"}`}
-          >
-            {adminMode ? "Exit Admin" : "Admin"}
-          </button>
-        </div>
 
         {/* ── Tag filter bar ──────────────────────────────────── */}
         <div className="bg-white border border-gray-100 rounded-xl p-4">

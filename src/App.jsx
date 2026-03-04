@@ -64,7 +64,8 @@ function App() {
             <Route index element={<Navigate to="/all-orgs/database" replace />} />
             <Route path="database"  element={<AllOrgs />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="nominate"  element={<Nominate />} />
+            {/* nominate renders the database view as backdrop + a modal overlay */}
+            <Route path="nominate"  element={<AllOrgs />} />
           </Route>
 
           {/* ── Standalone pages ─────────────────────────────── */}

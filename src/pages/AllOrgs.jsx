@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle } from "lucide-react";
 import { fetchOrgs, updateSavesCount } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
 import FilterBar from "@/components/explore/FilterBar";
@@ -23,6 +24,7 @@ function getValuesAsArray(val) {
 }
 
 export default function AllOrgs() {
+  const navigate = useNavigate();
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({});
@@ -146,6 +148,15 @@ export default function AllOrgs() {
             <LayoutGrid className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Nominate button */}
+        <button
+          onClick={() => navigate("/all-orgs/nominate")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-crimson hover:text-crimson hover:bg-crimson/5 transition-colors"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span className="hidden sm:inline">Nominate</span>
+        </button>
       </div>
 
       {showFilters && (

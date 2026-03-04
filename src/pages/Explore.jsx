@@ -32,20 +32,6 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-crimson text-white px-6 py-8">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-crimson-100 text-sm font-medium tracking-wide uppercase mb-1">
-            Harvard Business School
-          </p>
-          <h1 className="text-3xl font-bold mb-1">
-            Explore impact organizations
-          </h1>
-          <p className="text-crimson-100 text-sm">
-            Use the guided quiz to discover organizations that match your interests.
-          </p>
-        </div>
-      </div>
-
       <div className="max-w-5xl mx-auto px-6 py-6">
         {loading ? (
           <div className="text-sm text-gray-500">Loading organizations…</div>
