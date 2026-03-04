@@ -51,6 +51,40 @@ function applySort(list, order) {
   return copy.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 }
 
+// Relevance sort: when filters active, rank by tag specificity.
+// Resources whose matching tags are rarer in the full dataset float higher.
+// e.g. GIIN is near-unique for "Impact Investing"; AVPN for "Asia" → they rank first.
+function applyRelevanceSort(filtered, allResources, activeFilters) {
+  // Build tag → count across full dataset
+  const tagCounts = {};
+  allResources.forEach(r => {
+    (r.tags || []).forEach(tag => { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+  });
+  const n = allResources.length || 1;
+
+  const score = (r) => {
+    const tags = r.tags || [];
+    // Expand active geo filters to also match "Global"
+    const effectiveFilters = [...activeFilters];
+    const hasGeoFilter = activeFilters.some(t => GEO_TAGS.has(t));
+    if (hasGeoFilter && tags.includes("Global") && !tags.some(t => activeFilters.includes(t))) {
+      // Global wildcard match — give a low score so specific matches outrank it
+      return activeFilters.reduce((sum) => sum + 0.1 / n, 0);
+    }
+    return tags
+      .filter(t => activeFilters.includes(t))
+      .reduce((sum, t) => sum + 1 / (tagCounts[t] || 1), 0);
+  };
+
+  return [...filtered].sort((a, b) => {
+    // Featured items always stay on top regardless
+    if (b.featured !== a.featured) return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    return score(b) - score(a);
+  });
+}
+
+const PAGE_SIZE = 16;
+
 // ── Default resource seeds ────────────────────────────────────
 const DEFAULT_GENERAL_RESOURCES = [
   {
@@ -472,6 +506,7 @@ export default function Resources() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [sortOrder, setSortOrder] = useState("featured");
+  const [generalPage, setGeneralPage] = useState(0);
 
   useEffect(() => {
     fetchContent("general_resources").then(data => {
@@ -485,12 +520,23 @@ export default function Resources() {
     fetchContent("hbs_resources").then(data => { if (data) setHbsResources(data); }).catch(() => {});
   }, []);
 
-  const toggleResourceTag = tag =>
+  const toggleResourceTag = tag => {
+    setGeneralPage(0);
     setResourceTagFilters(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+  };
 
-  const filteredGeneralResources = useMemo(() =>
-    applySort(generalResources.filter(r => resourceMatchesFilters(r, resourceTagFilters)), sortOrder),
-    [generalResources, resourceTagFilters, sortOrder]
+  const filteredGeneralResources = useMemo(() => {
+    const matched = generalResources.filter(r => resourceMatchesFilters(r, resourceTagFilters));
+    if (resourceTagFilters.length > 0) {
+      return applyRelevanceSort(matched, generalResources, resourceTagFilters);
+    }
+    return applySort(matched, sortOrder);
+  }, [generalResources, resourceTagFilters, sortOrder]);
+
+  const totalGeneralPages = Math.ceil(filteredGeneralResources.length / PAGE_SIZE);
+  const pagedGeneralResources = filteredGeneralResources.slice(
+    generalPage * PAGE_SIZE,
+    (generalPage + 1) * PAGE_SIZE
   );
 
   const filteredHbsResources = useMemo(() =>
@@ -619,7 +665,7 @@ export default function Resources() {
               </span>
             </h2>
             <div className="flex items-center gap-3">
-              <SortControl value={sortOrder} onChange={setSortOrder} />
+              <SortControl value={sortOrder} onChange={v => { setGeneralPage(0); setSortOrder(v); }} />
               {adminMode && (
                 <button
                   onClick={() => setEditingResource({ section: "general", index: null, data: { emoji: "🔗", title: "", subtitle: "", desc: "", tipsText: "", url: "", cta: "", tags: [], featured: false } })}
@@ -635,7 +681,7 @@ export default function Resources() {
             <p className="text-sm text-gray-400 py-6 text-center">No resources match the selected filters.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {filteredGeneralResources.map((r) => {
+              {pagedGeneralResources.map((r) => {
                 const realIndex = generalResources.indexOf(r);
                 return (
                   <div
@@ -646,11 +692,6 @@ export default function Resources() {
                     {r.featured && (
                       <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">
                         <Star className="w-2.5 h-2.5" /> Featured
-                      </span>
-                    )}
-                    {r.dateAdded && (
-                      <span className="absolute top-3 right-3 text-[10px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
-                        New
                       </span>
                     )}
                     {adminMode && (
@@ -697,6 +738,30 @@ export default function Resources() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalGeneralPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <button
+                onClick={() => setGeneralPage(p => Math.max(0, p - 1))}
+                disabled={generalPage === 0}
+                className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Previous
+              </button>
+              <span className="text-xs text-gray-400">
+                Page {generalPage + 1} of {totalGeneralPages}
+                <span className="ml-1 text-gray-300">({filteredGeneralResources.length} resources)</span>
+              </span>
+              <button
+                onClick={() => setGeneralPage(p => Math.min(totalGeneralPages - 1, p + 1))}
+                disabled={generalPage >= totalGeneralPages - 1}
+                className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                Next →
+              </button>
             </div>
           )}
         </div>
