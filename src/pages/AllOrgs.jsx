@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark } from "lucide-react";
-import { fetchOrgs, updateSavesCount } from "@/api/organizationsApi";
+import { fetchOrgs, updateSavesCount, deleteOrg } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
 import FilterBar from "@/components/explore/FilterBar";
 import OrgTable from "@/components/explore/OrgTable";
 import OrgCard from "@/components/explore/OrgCard";
 import OrgModal from "@/components/explore/OrgModal";
+import OrgForm from "@/components/admin/OrgForm";
+import { useAdmin } from "@/contexts/AdminContext";
 
 function getValuesAsArray(val) {
   if (Array.isArray(val)) {
@@ -26,8 +28,10 @@ function getValuesAsArray(val) {
 export default function AllOrgs() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { adminMode } = useAdmin();
   const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingOrg, setEditingOrg] = useState(null); // null = closed, {} = new, org = editing
   // Pre-populate filters if navigated here from the dashboard
   const [filters, setFilters] = useState(() => location.state?.filters || {});
 
@@ -52,12 +56,17 @@ export default function AllOrgs() {
     typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
   );
 
-  useEffect(() => {
+  const reloadOrgs = () => {
+    setLoading(true);
     fetchOrgs()
       .then((data) => setOrgs(data))
       .catch((err) => console.error("Error fetching organizations:", err))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    reloadOrgs();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleSave = (id) => {
     setSavedIds((prev) => {
@@ -75,6 +84,15 @@ export default function AllOrgs() {
       );
       return next;
     });
+  };
+
+  const handleDelete = async (org) => {
+    try {
+      await deleteOrg(org.id);
+      setOrgs(prev => prev.filter(o => o.id !== org.id));
+    } catch (err) {
+      console.error("Error deleting org:", err);
+    }
   };
 
   const filtered = orgs.filter((org) => {
@@ -184,6 +202,17 @@ export default function AllOrgs() {
           <PlusCircle className="w-4 h-4" />
           <span className="hidden sm:inline">Nominate</span>
         </button>
+
+        {/* Admin: Add Org button */}
+        {adminMode && (
+          <button
+            onClick={() => setEditingOrg({})}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>+ Add Org</span>
+          </button>
+        )}
       </div>
 
       {showFilters && (
@@ -217,6 +246,8 @@ export default function AllOrgs() {
               savedIds={savedIds}
               onSave={toggleSave}
               onRowClick={setSelectedOrg}
+              onEdit={adminMode ? (org) => setEditingOrg(org) : undefined}
+              onDelete={adminMode ? handleDelete : undefined}
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -227,6 +258,8 @@ export default function AllOrgs() {
                   saved={savedIds.includes(org.id)}
                   onSave={toggleSave}
                   onClick={() => setSelectedOrg(org)}
+                  onEdit={adminMode ? () => setEditingOrg(org) : undefined}
+                  onDelete={adminMode ? () => handleDelete(org) : undefined}
                 />
               ))}
               {filtered.length === 0 && (
@@ -241,6 +274,35 @@ export default function AllOrgs() {
 
       {selectedOrg && (
         <OrgModal org={selectedOrg} onClose={() => setSelectedOrg(null)} />
+      )}
+
+      {/* Admin: inline OrgForm modal */}
+      {editingOrg !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto py-10"
+          onClick={(e) => { if (e.target === e.currentTarget) setEditingOrg(null); }}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-900">
+                {editingOrg?.id ? "Edit Organization" : "Add Organization"}
+              </h2>
+              <button
+                onClick={() => setEditingOrg(null)}
+                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <OrgForm
+                org={editingOrg?.id ? editingOrg : undefined}
+                onSave={() => { setEditingOrg(null); reloadOrgs(); }}
+                onCancel={() => setEditingOrg(null)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

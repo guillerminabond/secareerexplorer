@@ -2,15 +2,17 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Lock, MessageSquare } from "lucide-react";
 import FeedbackModal from "./FeedbackModal";
-import AdminModal from "./AdminModal";
+import AdminAuthModal from "./AdminAuthModal";
+import { useAdmin } from "@/contexts/AdminContext";
 
 export default function MainNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const p = location.pathname;
+  const { adminMode, setAdminMode } = useAdmin();
 
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
+  const [showAdminAuth, setShowAdminAuth] = useState(false);
 
   // Active state derived from URL
   const isExploreActive   = p === "/" || p.startsWith("/explore");
@@ -23,6 +25,14 @@ export default function MainNav() {
     `flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
       active ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
     }`;
+
+  const handleAdminClick = () => {
+    if (adminMode) {
+      setAdminMode(false); // toggle off
+    } else {
+      setShowAdminAuth(true); // open auth modal
+    }
+  };
 
   return (
     <>
@@ -58,7 +68,7 @@ export default function MainNav() {
             </button>
           </div>
 
-          {/* Feedback + Admin — pinned right, both open as popups */}
+          {/* Feedback + Admin — pinned right */}
           <div className="flex-shrink-0 border-l border-gray-100 px-3 sm:px-4 self-stretch flex items-center gap-2">
             <button
               onClick={() => setShowFeedback(true)}
@@ -69,20 +79,33 @@ export default function MainNav() {
               <span className="hidden sm:inline">Feedback</span>
             </button>
 
+            {/* Admin — orange dot when active, click to toggle */}
             <button
-              onClick={() => setShowAdmin(true)}
-              title="Admin panel"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
+              onClick={handleAdminClick}
+              title={adminMode ? "Exit admin mode" : "Admin panel"}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                adminMode
+                  ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                  : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
+              }`}
             >
               <Lock className="w-3 h-3" />
               <span className="hidden sm:inline">Admin</span>
+              {adminMode && (
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
+              )}
             </button>
           </div>
         </div>
       </div>
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
-      {showAdmin    && <AdminModal    onClose={() => setShowAdmin(false)} />}
+      {showAdminAuth && (
+        <AdminAuthModal
+          onSuccess={() => { setAdminMode(true); setShowAdminAuth(false); }}
+          onClose={() => setShowAdminAuth(false)}
+        />
+      )}
     </>
   );
 }
