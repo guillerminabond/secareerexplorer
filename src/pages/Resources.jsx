@@ -2,11 +2,15 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Star, Plus, Pencil, Trash2, X, SlidersHorizontal } from "lucide-react";
 import { fetchContent, upsertContent } from "@/api/contentApi";
 import { useAdmin } from "@/contexts/AdminContext";
+import { PARENT_REGIONS } from "@/constants/regions";
 
 // ── Resource tag taxonomy ─────────────────────────────────────
+// Geography uses the canonical parent regions from regions.js so this
+// stays in sync with the org database (Global, North America, Latin America
+// & Caribbean, Europe, Africa, Middle East & North Africa, Asia).
 const RESOURCE_TAG_GROUPS = {
   "Org Type": ["Nonprofit", "Foundation", "Impact Investing", "Social Enterprise", "B Corp", "Startup"],
-  "Geography": ["Global", "North America", "Latin America", "Europe", "Africa", "Middle East", "Asia Pacific"],
+  "Geography": PARENT_REGIONS, // ["Global", "North America", "Latin America & Caribbean", "Europe", "Africa", "Middle East & North Africa", "Asia"]
   "Function": ["Career Support", "Research", "Mentorship", "Alumni", "Fellowship", "Funding", "Community"],
 };
 
