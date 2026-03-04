@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark } from "lucide-react";
 import { fetchOrgs, updateSavesCount } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
 import FilterBar from "@/components/explore/FilterBar";
@@ -38,6 +38,7 @@ export default function AllOrgs() {
     }
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [viewMode, setViewMode] = useState(() =>
     typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
   );
@@ -68,6 +69,7 @@ export default function AllOrgs() {
   };
 
   const filtered = orgs.filter((org) => {
+    if (showSavedOnly && !savedIds.includes(org.id)) return false;
     if (
       search &&
       !org.name?.toLowerCase().includes(search.toLowerCase()) &&
@@ -148,6 +150,22 @@ export default function AllOrgs() {
             <LayoutGrid className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Saved filter toggle */}
+        <button
+          onClick={() => setShowSavedOnly(!showSavedOnly)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+            showSavedOnly
+              ? "border-crimson text-crimson bg-crimson/5"
+              : "border-gray-200 text-gray-600 bg-white hover:border-crimson hover:text-crimson hover:bg-crimson/5"
+          }`}
+          title="Show saved organizations"
+        >
+          <Bookmark className={`w-4 h-4 ${showSavedOnly ? "fill-crimson" : ""}`} />
+          <span className="hidden sm:inline">
+            Saved{savedIds.length > 0 ? ` (${savedIds.length})` : ""}
+          </span>
+        </button>
 
         {/* Nominate button */}
         <button

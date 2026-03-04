@@ -78,7 +78,7 @@ export default function Admin() {
   // ── Login screen ──────────────────────────────────────────────
   if (!authed) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="bg-gray-50 flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
           <div className="flex items-center gap-2 mb-6">
             <Lock className="w-5 h-5 text-[#A51C30]" />
@@ -104,7 +104,7 @@ export default function Admin() {
   // ── Org edit form ─────────────────────────────────────────────
   if (editing !== null) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="bg-gray-50">
         <div className="max-w-2xl mx-auto px-6 py-8">
           <h1 className="text-xl font-bold text-gray-900 mb-6">
             {editing.id ? "Edit Organization" : "Add Organization"}
@@ -132,7 +132,7 @@ export default function Admin() {
       // cause_areas, regions etc. will be blank since OrgForm handles them from DB
     };
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="bg-gray-50">
         <div className="max-w-2xl mx-auto px-6 py-8">
           <div className="flex items-center gap-3 mb-2">
             <button onClick={() => setApprovingNom(null)} className="text-sm text-gray-400 hover:text-gray-600">← Back to nominations</button>
@@ -157,7 +157,7 @@ export default function Admin() {
   const pendingCount = nominations.filter(n => n.status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <div className="max-w-5xl mx-auto px-6 py-8">
         {/* Sub-tabs */}
         <div className="flex items-center justify-between mb-6">

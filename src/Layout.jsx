@@ -22,6 +22,9 @@ export default function Layout({ children }) {
         /* Hide scrollbars on the nav pill strip while keeping scroll functional */
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+        /* Admin modal: strip min-h-screen from Admin sub-views */
+        .admin-modal-content .min-h-screen { min-height: 0 !important; }
       `}</style>
       {/* ── Site header ─────────────────────────────────── */}
       <div className="bg-crimson text-white px-6 py-3">
