@@ -3,6 +3,7 @@ import { fetchOrgs, deleteOrg } from "@/api/organizationsApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
 import OrgForm from "@/components/admin/OrgForm";
 import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock } from "lucide-react";
+import { useAdmin } from "@/contexts/AdminContext";
 
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
 
@@ -14,7 +15,9 @@ function StatusBadge({ status }) {
 }
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(false);
+  const { adminMode } = useAdmin();
+  // Pre-unlock if the user is already in global admin mode; otherwise require local login
+  const [authed, setAuthed] = useState(adminMode);
   const [pw, setPw] = useState("");
   const [pwError, setPwError] = useState(false);
   const [adminTab, setAdminTab] = useState("orgs"); // "orgs" | "nominations"
@@ -30,6 +33,9 @@ export default function Admin() {
   const [loadingNoms, setLoadingNoms] = useState(true);
   const [expandedNom, setExpandedNom] = useState(null);
   const [approvingNom, setApprovingNom] = useState(null); // nomination to approve → opens OrgForm pre-filled
+
+  // Sync: if global admin mode activates while on this page, unlock automatically
+  useEffect(() => { if (adminMode) setAuthed(true); }, [adminMode]);
 
   const login = () => {
     if (pw === ADMIN_PASSWORD) { setAuthed(true); setPwError(false); }

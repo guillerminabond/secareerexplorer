@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Star, Plus, Pencil, Trash2, X, Lock } from "lucide-react";
+import { Star, Plus, Pencil, Trash2, X } from "lucide-react";
 import { fetchContent, upsertContent } from "@/api/contentApi";
-
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
+import { useAdmin } from "@/contexts/AdminContext";
 
 // ── Resource tag taxonomy ─────────────────────────────────────
 const RESOURCE_TAG_GROUPS = {
@@ -173,41 +172,9 @@ function ResourceEditModal({ editing, onSave, onClose, saving }) {
   );
 }
 
-// ── Admin Auth Modal ──────────────────────────────────────────
-function AdminAuthModal({ onSuccess, onClose }) {
-  const [pw, setPw] = useState("");
-  const [error, setError] = useState(false);
-  const submit = () => {
-    if (pw === ADMIN_PASSWORD) { onSuccess(); }
-    else { setError(true); setPw(""); }
-  };
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#A51C30]" />
-            <h2 className="font-semibold text-gray-900">Admin Access</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-        </div>
-        <input type="password" placeholder="Password" value={pw}
-          onChange={e => { setPw(e.target.value); setError(false); }}
-          onKeyDown={e => e.key === "Enter" && submit()} autoFocus
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30 mb-2" />
-        {error && <p className="text-xs text-red-500 mb-2">Incorrect password.</p>}
-        <button onClick={submit} className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium hover:bg-[#A51C30]/90">
-          Unlock
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Resources Page ───────────────────────────────────────
 export default function Resources() {
-  const [adminMode, setAdminMode] = useState(false);
-  const [showAdminAuth, setShowAdminAuth] = useState(false);
+  const { adminMode } = useAdmin();
   const [generalResources, setGeneralResources] = useState([...DEFAULT_GENERAL_RESOURCES]);
   const [hbsResources, setHbsResources] = useState([...DEFAULT_HBS_RESOURCES]);
   const [editingResource, setEditingResource] = useState(null);
@@ -498,12 +465,6 @@ export default function Resources() {
           onSave={handleSaveResource}
           onClose={() => setEditingResource(null)}
           saving={savingResource}
-        />
-      )}
-      {showAdminAuth && (
-        <AdminAuthModal
-          onSuccess={() => { setAdminMode(true); setShowAdminAuth(false); }}
-          onClose={() => setShowAdminAuth(false)}
         />
       )}
     </div>
