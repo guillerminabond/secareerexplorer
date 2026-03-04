@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { expandRegions } from "@/constants/regions";
 import { fetchOrgs, createOrg, updateOrg, deleteOrg } from "@/api/organizationsApi";
 import { fetchContent, upsertContent } from "@/api/contentApi";
@@ -317,6 +318,9 @@ function OrgEditModal({ org, onSave, onClose }) {
 
 // ── Main Page ────────────────────────────────────────────────
 export default function Home() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [tab, setTab] = useState("Explore");
   const [allOrgsSubTab, setAllOrgsSubTab] = useState("Database");
   const [showOrgMenu, setShowOrgMenu] = useState(false);
@@ -579,20 +583,33 @@ export default function Home() {
 
   const adminProps = adminMode ? { onEdit: handleEdit, onDelete: handleDelete } : {};
 
-  // Navigate into "All Organizations" group and choose a sub-tab
+  // Navigate into "All Organizations" group — uses real URLs
   const goToSubTab = (subTab) => {
+    setShowOrgMenu(false);
+    if (subTab === "Dashboard")           navigate("/all-orgs/dashboard");
+    else if (subTab === "Database")       navigate("/all-orgs/database");
+    else if (subTab === "Saved Organizations") navigate("/all-orgs/database");
+    else                                  navigate("/all-orgs/database");
+    // Keep internal subtab in sync for the inline renderer at "/"
     setTab("All Organizations");
     setAllOrgsSubTab(subTab);
-    setShowOrgMenu(false);
   };
 
   // Navigate to Database tab with pre-applied filters (used by dashboard chart clicks)
   const goToDbWithFilters = (f) => {
     setFilters(f);
+    setShowOrgMenu(false);
+    navigate("/all-orgs/database");
     setTab("All Organizations");
     setAllOrgsSubTab("Database");
-    setShowOrgMenu(false);
   };
+
+  // ── URL-aware active state for nav tabs ────────────────────
+  const p = location.pathname;
+  const isExploreActive    = tab === "Explore"              || p === "/explore";
+  const isAllOrgsActive    = tab === "All Organizations"    || p.startsWith("/all-orgs");
+  const isLearnMoreActive  = tab === "Learn More"           || p === "/learn-more";
+  const isResourcesActive  = tab === "Additional Resources" || p === "/resources";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -614,9 +631,9 @@ export default function Home() {
 
             {/* Explore */}
             <button
-              onClick={() => { setTab("Explore"); setShowOrgMenu(false); }}
+              onClick={() => { setTab("Explore"); setShowOrgMenu(false); navigate("/explore"); }}
               className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                tab === "Explore" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                isExploreActive ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
               Explore
@@ -626,27 +643,27 @@ export default function Home() {
             <div className="flex-shrink-0" ref={orgMenuRef}>
               <button
                 onClick={() => {
-                  if (tab !== "All Organizations") setTab("All Organizations");
+                  setTab("All Organizations");
                   // Capture button position so the fixed dropdown can align to it
                   if (orgMenuRef.current) {
                     const r = orgMenuRef.current.getBoundingClientRect();
                     setOrgMenuPos({ top: r.bottom + 4, left: r.left });
                   }
-                  setShowOrgMenu(p => !p);
+                  setShowOrgMenu(prev => !prev);
                 }}
                 className={`my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
-                  tab === "All Organizations" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                  isAllOrgsActive ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 All Organizations
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${showOrgMenu ? "rotate-180" : ""}`} />
                 {savedIds.length > 0 && (
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${isAllOrgsActive ? "bg-white/30 text-white" : "bg-crimson text-white"}`}>
                     {savedIds.length}
                   </span>
                 )}
                 {adminMode && pendingNomCount > 0 && (
-                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${tab === "All Organizations" ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 leading-none ${isAllOrgsActive ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>
                     {pendingNomCount}
                   </span>
                 )}
@@ -687,9 +704,9 @@ export default function Home() {
 
             {/* Learn More */}
             <button
-              onClick={() => { setTab("Learn More"); setShowOrgMenu(false); }}
+              onClick={() => { setTab("Learn More"); setShowOrgMenu(false); navigate("/learn-more"); }}
               className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                tab === "Learn More" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                isLearnMoreActive ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
               Learn More
@@ -697,9 +714,9 @@ export default function Home() {
 
             {/* Additional Resources */}
             <button
-              onClick={() => { setTab("Additional Resources"); setShowOrgMenu(false); }}
+              onClick={() => { setTab("Additional Resources"); setShowOrgMenu(false); navigate("/resources"); }}
               className={`flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                tab === "Additional Resources" ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                isResourcesActive ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               }`}
             >
               Resources
