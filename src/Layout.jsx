@@ -1,4 +1,5 @@
 import React from "react";
+import MainNav from "./components/MainNav";
 
 export default function Layout({ children }) {
   return (
@@ -22,6 +23,7 @@ export default function Layout({ children }) {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
       `}</style>
+      <MainNav />
       {children}
     </div>
   );

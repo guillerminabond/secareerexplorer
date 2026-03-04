@@ -11,18 +11,6 @@ const tabClass = ({ isActive }) =>
 export default function AllOrgsLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-crimson text-white px-6 py-8">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-crimson-100 text-sm font-medium tracking-wide uppercase mb-1">
-            Harvard Business School
-          </p>
-          <h1 className="text-3xl font-bold mb-1">All Organizations</h1>
-          <p className="text-crimson-100 text-sm">
-            Browse, search, and explore the full database of social enterprise organizations.
-          </p>
-        </div>
-      </div>
-
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 flex gap-2 overflow-x-auto scrollbar-hide">
           <NavLink to="/all-orgs/database" className={tabClass}>

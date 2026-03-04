@@ -285,28 +285,16 @@ export default function Resources() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-crimson text-white px-6 py-8">
-        <div className="max-w-5xl mx-auto flex items-start justify-between">
-          <div>
-            <p className="text-crimson-100 text-sm font-medium tracking-wide uppercase mb-1">
-              Harvard Business School
-            </p>
-            <h1 className="text-3xl font-bold mb-1">Additional Resources</h1>
-            <p className="text-crimson-100 text-sm">
-              Job boards, career platforms, and HBS-specific resources for social enterprise.
-            </p>
-          </div>
+      <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
+        {/* Admin toggle */}
+        <div className="flex justify-end">
           <button
             onClick={() => adminMode ? setAdminMode(false) : setShowAdminAuth(true)}
-            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors mt-1 ${adminMode ? "bg-white/20 text-white border-white/30" : "border-white/30 text-white/70 hover:bg-white/10"}`}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${adminMode ? "bg-crimson text-white border-crimson" : "border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-500"}`}
           >
             {adminMode ? "Exit Admin" : "Admin"}
           </button>
         </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-6 py-6 space-y-8">
 
         {/* ── Tag filter bar ──────────────────────────────────── */}
         <div className="bg-white border border-gray-100 rounded-xl p-4">
