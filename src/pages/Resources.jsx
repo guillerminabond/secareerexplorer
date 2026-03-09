@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Star, Plus, Pencil, Trash2, X, SlidersHorizontal, ExternalLink, ArrowUpDown } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { fetchContent, upsertContent } from "@/api/contentApi";
 import { useAdmin } from "@/contexts/AdminContext";
 import { PARENT_REGIONS } from "@/constants/regions";
@@ -498,6 +499,7 @@ function SortControl({ value, onChange }) {
 // ── Main Resources Page ───────────────────────────────────────
 export default function Resources() {
   const { adminMode } = useAdmin();
+  const location = useLocation();
   const [generalResources, setGeneralResources] = useState([...DEFAULT_GENERAL_RESOURCES]);
   const [hbsResources, setHbsResources] = useState([...DEFAULT_HBS_RESOURCES]);
   const [editingResource, setEditingResource] = useState(null);
@@ -507,6 +509,17 @@ export default function Resources() {
   const [selectedResource, setSelectedResource] = useState(null);
   const [sortOrder, setSortOrder] = useState("featured");
   const [generalPage, setGeneralPage] = useState(0);
+
+  // Accept pre-filters from navigation state (e.g. from "View entry paths" in Explore)
+  useEffect(() => {
+    const preFilters = location.state?.preFilters;
+    if (preFilters?.length) {
+      setResourceTagFilters(preFilters);
+      setShowFilters(true);
+      // Clear the state so a page refresh doesn't re-apply them
+      window.history.replaceState({}, "");
+    }
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     fetchContent("general_resources").then(data => {
