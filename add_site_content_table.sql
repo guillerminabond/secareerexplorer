@@ -21,8 +21,8 @@ CREATE POLICY "Public read site_content"
   ON site_content FOR SELECT
   USING (true);
 
--- Allow anon key to write (admin password gates this in the UI)
-CREATE POLICY "Anon write site_content"
+-- Only authenticated admins can write site content
+CREATE POLICY "Auth write site_content"
   ON site_content FOR ALL
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');

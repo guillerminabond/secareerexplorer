@@ -11,13 +11,13 @@ import OrgForm from "@/components/admin/OrgForm";
 import QuizExplore from "@/components/explore/QuizExplore";
 import NominateModal from "@/components/NominateModal";
 import FeedbackModal from "@/components/FeedbackModal";
+import AdminAuthModal from "@/components/AdminAuthModal";
+import { useAdmin } from "@/contexts/AdminContext";
 import { Search, Download, SlidersHorizontal, LayoutGrid, List, Lock, Plus, X, Pencil, Trash2, Lightbulb, ChevronDown, Star, MessageSquare } from "lucide-react";
 
 import OrgTable from "@/components/explore/OrgTable";
 import LearnMorePage from "@/components/learnmore/LearnMorePage";
 import OrgDashboard from "@/components/dashboard/OrgDashboard";
-
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
 
 // Top-level nav tabs — "All Organizations" is a dropdown housing 3 sub-views
 const TOP_TABS = ["Explore", "All Organizations", "Learn More", "Additional Resources"];
@@ -256,46 +256,7 @@ function ResourceEditModal({ editing, onSave, onClose, saving }) {
   );
 }
 
-// ── Admin Auth Modal ─────────────────────────────────────────
-function AdminAuthModal({ onSuccess, onClose }) {
-  const [pw, setPw] = useState("");
-  const [error, setError] = useState(false);
-
-  const submit = () => {
-    if (pw === ADMIN_PASSWORD) { onSuccess(); }
-    else { setError(true); setPw(""); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-crimson" />
-            <h2 className="font-semibold text-gray-900">Admin Access</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
-        </div>
-        <input
-          type="password"
-          placeholder="Password"
-          value={pw}
-          onChange={e => { setPw(e.target.value); setError(false); }}
-          onKeyDown={e => e.key === "Enter" && submit()}
-          autoFocus
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 mb-2"
-        />
-        {error && <p className="text-xs text-red-500 mb-2">Incorrect password.</p>}
-        <button
-          onClick={submit}
-          className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium hover:bg-crimson/90"
-        >
-          Unlock
-        </button>
-      </div>
-    </div>
-  );
-}
+// (AdminAuthModal is imported from @/components/AdminAuthModal)
 
 // ── Org Edit Modal (wraps OrgForm) ───────────────────────────
 function OrgEditModal({ org, onSave, onClose }) {
@@ -342,8 +303,8 @@ export default function Home() {
     typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
   );
 
-  // Admin state
-  const [adminMode, setAdminMode] = useState(false);
+  // Admin state — adminMode is driven by Supabase Auth via AdminContext
+  const { adminMode, logout: adminLogout } = useAdmin();
   const [showAdminAuth, setShowAdminAuth] = useState(false);
   const [editingOrg, setEditingOrg] = useState(undefined);
   const [showNominate, setShowNominate] = useState(false);
@@ -486,7 +447,7 @@ export default function Home() {
   };
 
   const handleAdminToggle = () => {
-    if (adminMode) { setAdminMode(false); }
+    if (adminMode) { adminLogout(); }
     else { setShowAdminAuth(true); }
   };
 
@@ -998,7 +959,7 @@ export default function Home() {
       )}
       {showAdminAuth && (
         <AdminAuthModal
-          onSuccess={() => { setAdminMode(true); setShowAdminAuth(false); }}
+          onSuccess={() => setShowAdminAuth(false)}
           onClose={() => setShowAdminAuth(false)}
         />
       )}

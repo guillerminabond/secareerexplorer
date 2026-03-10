@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Send, CheckCircle } from "lucide-react";
 import { submitNomination } from "@/api/nominationsApi";
 import { REGION_HIERARCHY } from "@/constants/regions";
+import { validateText, isSafeUrl, isValidEmail, checkRateLimit, LIMITS } from "@/lib/security";
 
 const ORG_TYPES = ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"];
 
@@ -36,19 +37,47 @@ export default function NominateModal({ onClose }) {
   };
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) { setError("Organization name is required."); return; }
+    // ── Rate limiting ────────────────────────────────────────
+    const rateCheck = checkRateLimit("nominate");
+    if (!rateCheck.allowed) {
+      setError(`Too many submissions. Please wait ${rateCheck.retryAfter} seconds before trying again.`);
+      return;
+    }
+
+    // ── Validation ───────────────────────────────────────────
+    const nameCheck = validateText(form.name, LIMITS.NAME, true);
+    if (!nameCheck.valid) { setError(`Name: ${nameCheck.error}`); return; }
+
+    if (form.website.trim() && !isSafeUrl(form.website.trim())) {
+      setError("Website must be a valid URL starting with http:// or https://"); return;
+    }
+    if (form.website.trim() && form.website.trim().length > LIMITS.URL) {
+      setError(`Website URL must be ${LIMITS.URL} characters or fewer.`); return;
+    }
+
+    const descCheck = validateText(form.description, LIMITS.DESCRIPTION);
+    if (!descCheck.valid) { setError(`Description: ${descCheck.error}`); return; }
+
+    const connCheck = validateText(form.hbs_connection, LIMITS.SHORT_TEXT);
+    if (!connCheck.valid) { setError(`HBS connection: ${connCheck.error}`); return; }
+
+    // submitted_by may be name or email — validate length only
+    const byCheck = validateText(form.submitted_by, LIMITS.SHORT_TEXT);
+    if (!byCheck.valid) { setError(`Submitter name: ${byCheck.error}`); return; }
+
+    // ── Submit ───────────────────────────────────────────────
     setSubmitting(true);
     setError("");
     try {
       await submitNomination({
-        name: form.name.trim(),
-        website: form.website.trim() || null,
-        description: form.description.trim() || null,
-        org_type: form.org_type || null,
-        cause_areas: form.cause_areas.join(", ") || null,
-        regions: form.regions.join(", ") || null,
-        hbs_connection: form.hbs_connection.trim() || null,
-        submitted_by: form.submitted_by.trim() || null,
+        name:           nameCheck.value,
+        website:        form.website.trim() || null,
+        description:    descCheck.value,
+        org_type:       form.org_type || null,
+        cause_areas:    form.cause_areas.join(", ") || null,
+        regions:        form.regions.join(", ") || null,
+        hbs_connection: connCheck.value,
+        submitted_by:   byCheck.value,
       });
       setSubmitted(true);
     } catch (err) {

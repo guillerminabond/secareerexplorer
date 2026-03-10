@@ -22,18 +22,18 @@ CREATE TABLE IF NOT EXISTS org_nominations (
 -- Enable Row Level Security
 ALTER TABLE org_nominations ENABLE ROW LEVEL SECURITY;
 
--- Anyone can submit a nomination
+-- Anyone can submit a nomination (public feature)
 CREATE POLICY "Public insert nominations"
   ON org_nominations FOR INSERT
   WITH CHECK (true);
 
--- Anyone can read nominations (admin controls via password in UI)
-CREATE POLICY "Anon read nominations"
+-- Only authenticated admins can read the full nomination list
+CREATE POLICY "Auth read nominations"
   ON org_nominations FOR SELECT
-  USING (true);
+  USING (auth.role() = 'authenticated');
 
--- Allow status updates (admin password-gated in UI)
-CREATE POLICY "Anon update nominations"
+-- Only authenticated admins can update nomination status
+CREATE POLICY "Auth update nominations"
   ON org_nominations FOR UPDATE
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');

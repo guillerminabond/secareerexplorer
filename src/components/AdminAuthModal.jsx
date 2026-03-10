@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { X, Lock } from "lucide-react";
+import { X, Lock, Loader2 } from "lucide-react";
+import { useAdmin } from "@/contexts/AdminContext";
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
-
+/**
+ * AdminAuthModal — authenticates via Supabase Auth (email + password).
+ * The password is verified server-side; no secrets live in the client bundle.
+ */
 export default function AdminAuthModal({ onSuccess, onClose }) {
-  const [pw, setPw] = useState("");
-  const [error, setError] = useState(false);
+  const { login } = useAdmin();
+  const [email,    setEmail]    = useState("");
+  const [pw,       setPw]       = useState("");
+  const [error,    setError]    = useState("");
+  const [loading,  setLoading]  = useState(false);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -13,12 +19,20 @@ export default function AdminAuthModal({ onSuccess, onClose }) {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const unlock = () => {
-    if (pw === ADMIN_PASSWORD) {
-      onSuccess();
-    } else {
-      setError(true);
+  const unlock = async () => {
+    if (!email.trim() || !pw) {
+      setError("Email and password are required.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error: authError } = await login(email.trim(), pw);
+    setLoading(false);
+    if (authError) {
+      setError("Incorrect email or password.");
       setPw("");
+    } else {
+      onSuccess();
     }
   };
 
@@ -39,24 +53,37 @@ export default function AdminAuthModal({ onSuccess, onClose }) {
         </div>
 
         <input
+          type="email"
+          placeholder="Admin email"
+          value={email}
+          autoFocus
+          onChange={e => { setEmail(e.target.value); setError(""); }}
+          onKeyDown={e => e.key === "Enter" && unlock()}
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-crimson/30 transition-colors"
+        />
+
+        <input
           type="password"
           placeholder="Password"
           value={pw}
-          autoFocus
-          onChange={e => { setPw(e.target.value); setError(false); }}
+          onChange={e => { setPw(e.target.value); setError(""); }}
           onKeyDown={e => e.key === "Enter" && unlock()}
           className={`w-full border rounded-xl px-4 py-3 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-crimson/30 transition-colors ${
             error ? "border-red-300 bg-red-50" : "border-gray-200"
           }`}
         />
-        {error && <p className="text-xs text-red-500 mb-3">Incorrect password</p>}
-        {!error && <div className="mb-3" />}
+        {error
+          ? <p className="text-xs text-red-500 mb-3">{error}</p>
+          : <div className="mb-3" />
+        }
 
         <button
           onClick={unlock}
-          className="w-full py-3 bg-crimson text-white rounded-xl text-sm font-semibold hover:bg-crimson/90 transition-colors"
+          disabled={loading}
+          className="w-full py-3 bg-crimson text-white rounded-xl text-sm font-semibold hover:bg-crimson/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          Unlock
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? "Verifying…" : "Unlock"}
         </button>
       </div>
     </div>

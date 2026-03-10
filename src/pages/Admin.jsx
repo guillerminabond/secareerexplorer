@@ -2,10 +2,9 @@ import React, { useState, useEffect } from "react";
 import { fetchOrgs, deleteOrg } from "@/api/organizationsApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
 import OrgForm from "@/components/admin/OrgForm";
-import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
-
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "hbsse2024";
+import { sanitizeUrl } from "@/lib/security";
 
 // ── Nomination status badge ───────────────────────────────────
 function StatusBadge({ status }) {
@@ -15,11 +14,11 @@ function StatusBadge({ status }) {
 }
 
 export default function Admin() {
-  const { adminMode } = useAdmin();
-  // Pre-unlock if the user is already in global admin mode; otherwise require local login
-  const [authed, setAuthed] = useState(adminMode);
-  const [pw, setPw] = useState("");
-  const [pwError, setPwError] = useState(false);
+  const { adminMode, authLoading, login, logout } = useAdmin();
+  const [email,    setEmail]    = useState("");
+  const [pw,       setPw]       = useState("");
+  const [pwError,  setPwError]  = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
   const [adminTab, setAdminTab] = useState("orgs"); // "orgs" | "nominations"
 
   // Organizations state
@@ -34,12 +33,13 @@ export default function Admin() {
   const [expandedNom, setExpandedNom] = useState(null);
   const [approvingNom, setApprovingNom] = useState(null); // nomination to approve → opens OrgForm pre-filled
 
-  // Sync: if global admin mode activates while on this page, unlock automatically
-  useEffect(() => { if (adminMode) setAuthed(true); }, [adminMode]);
-
-  const login = () => {
-    if (pw === ADMIN_PASSWORD) { setAuthed(true); setPwError(false); }
-    else setPwError(true);
+  const handleLogin = async () => {
+    if (!email.trim() || !pw) { setPwError("Email and password are required."); return; }
+    setLoggingIn(true);
+    setPwError("");
+    const { error } = await login(email.trim(), pw);
+    setLoggingIn(false);
+    if (error) { setPwError("Incorrect email or password."); setPw(""); }
   };
 
   const loadOrgs = async () => {
@@ -57,8 +57,8 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (authed) { loadOrgs(); loadNominations(); }
-  }, [authed]);
+    if (adminMode) { loadOrgs(); loadNominations(); }
+  }, [adminMode]);
 
   const handleDelete = async (id) => {
     try { await deleteOrg(id); }
@@ -81,8 +81,17 @@ export default function Admin() {
     loadNominations();
   };
 
+  // ── Auth loading ───────────────────────────────────────────────
+  if (authLoading) {
+    return (
+      <div className="bg-gray-50 flex items-center justify-center py-24">
+        <Loader2 className="w-6 h-6 animate-spin text-[#A51C30]" />
+      </div>
+    );
+  }
+
   // ── Login screen ──────────────────────────────────────────────
-  if (!authed) {
+  if (!adminMode) {
     return (
       <div className="bg-gray-50 flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
@@ -91,16 +100,29 @@ export default function Admin() {
             <h1 className="text-lg font-bold text-gray-900">Admin Login</h1>
           </div>
           <input
+            type="email"
+            placeholder="Admin email"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setPwError(""); }}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+          />
+          <input
             type="password"
             placeholder="Password"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
             value={pw}
-            onChange={e => setPw(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && login()}
+            onChange={e => { setPw(e.target.value); setPwError(""); }}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
           />
-          {pwError && <p className="text-red-500 text-xs mb-3">Incorrect password</p>}
-          <button onClick={login} className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium">
-            Login
+          {pwError && <p className="text-red-500 text-xs mb-3">{pwError}</p>}
+          <button
+            onClick={handleLogin}
+            disabled={loggingIn}
+            className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loggingIn ? "Verifying…" : "Login"}
           </button>
         </div>
       </div>
@@ -287,7 +309,14 @@ export default function Admin() {
 
                   {expandedNom === n.id && (
                     <div className="border-t border-gray-100 px-4 py-3 space-y-2 bg-gray-50 text-xs text-gray-600">
-                      {n.website && <p><span className="font-semibold text-gray-500">Website:</span> <a href={n.website} target="_blank" rel="noopener noreferrer" className="text-[#A51C30] hover:underline">{n.website}</a></p>}
+                      {n.website && (() => {
+                        const safeHref = sanitizeUrl(n.website);
+                        return <p><span className="font-semibold text-gray-500">Website:</span>{" "}
+                          {safeHref
+                            ? <a href={safeHref} target="_blank" rel="noopener noreferrer" className="text-[#A51C30] hover:underline">{n.website}</a>
+                            : <span className="text-red-400 italic">Invalid URL</span>}
+                        </p>;
+                      })()}
                       {n.description && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
                       {n.cause_areas && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
                       {n.regions && <p><span className="font-semibold text-gray-500">Regions:</span> {n.regions}</p>}

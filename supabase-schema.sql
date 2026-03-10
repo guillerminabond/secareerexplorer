@@ -176,12 +176,25 @@ CREATE POLICY "Public read" ON organization_role_types FOR SELECT USING (true);
 CREATE POLICY "Public read" ON organization_regions FOR SELECT USING (true);
 CREATE POLICY "Public read" ON organization_target_populations FOR SELECT USING (true);
 
--- Full write via anon key (admin page uses password protection in app)
-CREATE POLICY "All write" ON organizations FOR ALL USING (true);
-CREATE POLICY "All write" ON organization_cause_areas FOR ALL USING (true);
-CREATE POLICY "All write" ON organization_role_types FOR ALL USING (true);
-CREATE POLICY "All write" ON organization_regions FOR ALL USING (true);
-CREATE POLICY "All write" ON organization_target_populations FOR ALL USING (true);
+-- Write operations require an authenticated Supabase Auth session.
+-- Admins are created via the Supabase Dashboard → Authentication → Users.
+-- The app signs in with supabase.auth.signInWithPassword() which issues a
+-- short-lived JWT; all subsequent API calls carry that token automatically.
+CREATE POLICY "Auth write" ON organizations FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Auth write" ON organization_cause_areas FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Auth write" ON organization_role_types FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Auth write" ON organization_regions FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Auth write" ON organization_target_populations FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
 
 -- ── 6. CSV IMPORT MIGRATION (run AFTER importing your CSV) ──
 -- If you import your existing 400 records via CSV, run this to
