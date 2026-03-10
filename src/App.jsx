@@ -13,6 +13,7 @@ import LearnMore from "./pages/LearnMore";
 import Resources from "./pages/Resources";
 import Admin from "./pages/Admin";
 import HowToUse from "./pages/HowToUse";
+import UpdatePassword from "./pages/UpdatePassword";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -108,6 +109,9 @@ function App() {
               </LayoutWrapper>
             }
           />
+
+          {/* ── Password recovery ─────────────────────────────── */}
+          <Route path="/update-password" element={<UpdatePassword />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
