@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { fetchOrgs, deleteOrg } from "@/api/organizationsApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
 import OrgForm from "@/components/admin/OrgForm";
-import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock, Loader2, UserPlus, LogOut, Users } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { sanitizeUrl } from "@/lib/security";
+import { supabase } from "@/api/supabaseClient";
 
 // ── Nomination status badge ───────────────────────────────────
 function StatusBadge({ status }) {
@@ -13,25 +15,118 @@ function StatusBadge({ status }) {
   return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"><Clock className="w-3 h-3" />Pending</span>;
 }
 
+// ── Users tab ─────────────────────────────────────────────────
+function UsersTab() {
+  const [newEmail,    setNewEmail]    = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [creating,    setCreating]    = useState(false);
+  const [createMsg,   setCreateMsg]   = useState(null); // { type: "success"|"error", text }
+
+  const handleCreate = async () => {
+    setCreateMsg(null);
+    if (!newEmail.trim() || !newPassword) {
+      setCreateMsg({ type: "error", text: "Email and password are required." });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setCreateMsg({ type: "error", text: "Password must be at least 8 characters." });
+      return;
+    }
+    setCreating(true);
+    const { error } = await supabase.auth.signUp({
+      email:    newEmail.trim(),
+      password: newPassword,
+      options:  { emailRedirectTo: `${window.location.origin}/update-password` },
+    });
+    setCreating(false);
+    if (error) {
+      setCreateMsg({ type: "error", text: error.message || "Failed to create user." });
+    } else {
+      setCreateMsg({ type: "success", text: `Invite sent to ${newEmail.trim()}. They must confirm their email before logging in.` });
+      setNewEmail("");
+      setNewPassword("");
+    }
+  };
+
+  return (
+    <div className="max-w-md">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="flex items-center gap-2 mb-1">
+          <UserPlus className="w-4 h-4 text-[#A51C30]" />
+          <h2 className="text-sm font-bold text-gray-900">Create New Admin User</h2>
+        </div>
+        <p className="text-xs text-gray-400 mb-5">
+          A confirmation email will be sent. The new user must verify their email before they can log in.
+        </p>
+
+        <input
+          type="email"
+          placeholder="New admin email"
+          value={newEmail}
+          onChange={e => { setNewEmail(e.target.value); setCreateMsg(null); }}
+          onKeyDown={e => e.key === "Enter" && handleCreate()}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+        />
+        <input
+          type="password"
+          placeholder="Temporary password (8+ chars)"
+          value={newPassword}
+          onChange={e => { setNewPassword(e.target.value); setCreateMsg(null); }}
+          onKeyDown={e => e.key === "Enter" && handleCreate()}
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+        />
+
+        {createMsg && (
+          <p className={`text-xs mb-3 ${createMsg.type === "success" ? "text-green-600" : "text-red-500"}`}>
+            {createMsg.text}
+          </p>
+        )}
+
+        <button
+          onClick={handleCreate}
+          disabled={creating}
+          className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {creating && <Loader2 className="w-4 h-4 animate-spin" />}
+          {creating ? "Creating…" : "Create User & Send Invite"}
+        </button>
+      </div>
+
+      <div className="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-700">
+        <strong>Note:</strong> New users will have full admin write access once confirmed.
+        Manage existing users or deactivate accounts in the{" "}
+        <a
+          href="https://supabase.com/dashboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-amber-900"
+        >
+          Supabase Dashboard → Authentication → Users
+        </a>.
+      </div>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { adminMode, authLoading, login, logout } = useAdmin();
-  const [email,    setEmail]    = useState("");
-  const [pw,       setPw]       = useState("");
-  const [pwError,  setPwError]  = useState("");
+  const [email,     setEmail]     = useState("");
+  const [pw,        setPw]        = useState("");
+  const [pwError,   setPwError]   = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
-  const [adminTab, setAdminTab] = useState("orgs"); // "orgs" | "nominations"
+  const [adminTab,  setAdminTab]  = useState("orgs"); // "orgs" | "nominations" | "users"
 
   // Organizations state
-  const [orgs, setOrgs] = useState([]);
+  const [orgs,        setOrgs]        = useState([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
-  const [editing, setEditing] = useState(null);
-  const [deleting, setDeleting] = useState(null);
+  const [editing,     setEditing]     = useState(null);
+  const [deleting,    setDeleting]    = useState(null);
 
   // Nominations state
-  const [nominations, setNominations] = useState([]);
-  const [loadingNoms, setLoadingNoms] = useState(true);
-  const [expandedNom, setExpandedNom] = useState(null);
-  const [approvingNom, setApprovingNom] = useState(null); // nomination to approve → opens OrgForm pre-filled
+  const [nominations,  setNominations]  = useState([]);
+  const [loadingNoms,  setLoadingNoms]  = useState(true);
+  const [expandedNom,  setExpandedNom]  = useState(null);
+  const [approvingNom, setApprovingNom] = useState(null);
 
   const handleLogin = async () => {
     if (!email.trim() || !pw) { setPwError("Email and password are required."); return; }
@@ -102,6 +197,7 @@ export default function Admin() {
           <input
             type="email"
             placeholder="Admin email"
+            autoFocus
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
             value={email}
             onChange={e => { setEmail(e.target.value); setPwError(""); }}
@@ -110,11 +206,16 @@ export default function Admin() {
           <input
             type="password"
             placeholder="Password"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
             value={pw}
             onChange={e => { setPw(e.target.value); setPwError(""); }}
             onKeyDown={e => e.key === "Enter" && handleLogin()}
           />
+          <div className="flex justify-end mb-3">
+            <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-[#A51C30] transition-colors">
+              Forgot password?
+            </Link>
+          </div>
           {pwError && <p className="text-red-500 text-xs mb-3">{pwError}</p>}
           <button
             onClick={handleLogin}
@@ -153,18 +254,15 @@ export default function Admin() {
   if (approvingNom !== null) {
     const n = approvingNom;
     const prefilledOrg = {
-      name: n.name || "",
-      website: n.website || "",
+      name:        n.name        || "",
+      website:     n.website     || "",
       description: n.description || "",
-      org_type: n.org_type || "",
-      // cause_areas, regions etc. will be blank since OrgForm handles them from DB
+      org_type:    n.org_type    || "",
     };
     return (
       <div className="bg-gray-50">
         <div className="max-w-2xl mx-auto px-6 py-8">
-          <div className="flex items-center gap-3 mb-2">
-            <button onClick={() => setApprovingNom(null)} className="text-sm text-gray-400 hover:text-gray-600">← Back to nominations</button>
-          </div>
+          <button onClick={() => setApprovingNom(null)} className="text-sm text-gray-400 hover:text-gray-600 mb-2">← Back to nominations</button>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-800">
             <strong>Approving nomination:</strong> {n.name}{n.hbs_connection ? ` — "${n.hbs_connection}"` : ""}
           </div>
@@ -187,7 +285,8 @@ export default function Admin() {
   return (
     <div className="bg-gray-50">
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Sub-tabs */}
+
+        {/* Header with logout */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex gap-2">
             <button
@@ -205,16 +304,31 @@ export default function Admin() {
                 <span className={`text-xs rounded-full px-1.5 py-0.5 ${adminTab === "nominations" ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>{pendingCount}</span>
               )}
             </button>
+            <button
+              onClick={() => setAdminTab("users")}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${adminTab === "users" ? "bg-[#A51C30] text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
+            >
+              <Users className="w-3.5 h-3.5" /> Users
+            </button>
           </div>
 
-          {adminTab === "orgs" && (
+          <div className="flex items-center gap-2">
+            {adminTab === "orgs" && (
+              <button
+                onClick={() => setEditing({})}
+                className="flex items-center gap-2 px-4 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium"
+              >
+                <Plus className="w-4 h-4" /> Add Organization
+              </button>
+            )}
             <button
-              onClick={() => setEditing({})}
-              className="flex items-center gap-2 px-4 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium"
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Log out"
             >
-              <Plus className="w-4 h-4" /> Add Organization
+              <LogOut className="w-4 h-4" /> Log out
             </button>
-          )}
+          </div>
         </div>
 
         {/* ── Organizations tab ── */}
@@ -317,12 +431,12 @@ export default function Admin() {
                             : <span className="text-red-400 italic">Invalid URL</span>}
                         </p>;
                       })()}
-                      {n.description && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
-                      {n.cause_areas && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
-                      {n.regions && <p><span className="font-semibold text-gray-500">Regions:</span> {n.regions}</p>}
+                      {n.description   && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
+                      {n.cause_areas   && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
+                      {n.regions       && <p><span className="font-semibold text-gray-500">Regions:</span> {n.regions}</p>}
                       {n.hbs_connection && <p><span className="font-semibold text-gray-500">HBS connection:</span> {n.hbs_connection}</p>}
-                      {n.submitted_by && <p><span className="font-semibold text-gray-500">Submitted by:</span> {n.submitted_by}</p>}
-                      {n.admin_notes && <p><span className="font-semibold text-gray-500">Admin notes:</span> {n.admin_notes}</p>}
+                      {n.submitted_by  && <p><span className="font-semibold text-gray-500">Submitted by:</span> {n.submitted_by}</p>}
+                      {n.admin_notes   && <p><span className="font-semibold text-gray-500">Admin notes:</span> {n.admin_notes}</p>}
                     </div>
                   )}
                 </div>
@@ -330,6 +444,10 @@ export default function Admin() {
             </div>
           )
         )}
+
+        {/* ── Users tab ── */}
+        {adminTab === "users" && <UsersTab />}
+
       </div>
     </div>
   );

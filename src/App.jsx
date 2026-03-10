@@ -14,6 +14,7 @@ import Resources from "./pages/Resources";
 import Admin from "./pages/Admin";
 import HowToUse from "./pages/HowToUse";
 import UpdatePassword from "./pages/UpdatePassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -111,7 +112,8 @@ function App() {
           />
 
           {/* ── Password recovery ─────────────────────────────── */}
-          <Route path="/update-password" element={<UpdatePassword />} />
+          <Route path="/update-password"  element={<UpdatePassword />} />
+          <Route path="/forgot-password"  element={<ForgotPassword />} />
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
