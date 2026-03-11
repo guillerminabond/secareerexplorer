@@ -250,6 +250,28 @@ const DEFAULT_GENERAL_RESOURCES = [
     url: "https://www.impactpool.org/search", cta: "Search International Jobs",
     tags: ["Nonprofit", "Foundation", "Global", "Africa", "Europe", "Asia", "Career Support", "Fellowship"], featured: false, dateAdded: "2026-03-04",
   },
+  // ── Added 2026-03-10 ─────────────────────────────────────────
+  {
+    emoji: "📋", title: "ProPublica Nonprofit Explorer", subtitle: "Free IRS 990 database for nonprofits",
+    desc: "Free searchable database of IRS Form 990 filings for 1.8 million nonprofit organizations. Pull audited financials, executive compensation, board composition, and program expenses — essential due diligence before applying or partnering.",
+    tips: ["Search an org before an interview to understand their financials and leadership", "Compare executive compensation across similar organizations", "Check program expense ratios to assess operational efficiency", "Download full 990 PDFs for granular program and grantee data"],
+    url: "https://projects.propublica.org/nonprofits/", cta: "Search Nonprofits",
+    tags: ["Nonprofit", "Foundation", "Research", "North America"], featured: false, dateAdded: "2026-03-10",
+  },
+  {
+    emoji: "🌟", title: "Audacious Project", subtitle: "TED's collaborative philanthropic initiative",
+    desc: "TED's Audacious Project funds bold ideas for social change at scale. The grantees directory showcases organizations receiving transformational philanthropy — useful for identifying top-tier nonprofits and tracking what major funders are backing globally.",
+    tips: ["Browse grantees to discover organizations tackling systemic issues at scale", "Use as a signal for which orgs are attracting major philanthropic capital", "Many grantees post jobs — search their career pages directly", "Follow announcements to track emerging impact areas gaining funder attention"],
+    url: "https://audaciousproject.org/grantees", cta: "Browse Grantees",
+    tags: ["Nonprofit", "Foundation", "Social Enterprise", "Funding", "Research", "Global"], featured: false, dateAdded: "2026-03-10",
+  },
+  {
+    emoji: "🏆", title: "Skoll Awardees", subtitle: "Skoll Foundation's social entrepreneurship award directory",
+    desc: "The Skoll Foundation's award program recognizes the world's leading social entrepreneurs driving large-scale, positive change. The awardee directory is a who's-who of proven social enterprises — useful for researching top organizations, career targets, and how the field's most impactful leaders define success.",
+    tips: ["Browse by year and sector to discover high-credibility organizations", "Use awardee orgs as career targets — the Skoll award signals organizational excellence", "Review awardee profiles for frameworks on how social entrepreneurs measure impact", "Cross-reference with Audacious Project and Candid for a fuller picture of top-tier orgs"],
+    url: "https://skoll.org/skoll-awardees/", cta: "Browse Awardees",
+    tags: ["Social Enterprise", "Nonprofit", "Foundation", "Funding", "Research", "Global"], featured: false, dateAdded: "2026-03-10",
+  },
 ];
 
 const DEFAULT_HBS_RESOURCES = [
