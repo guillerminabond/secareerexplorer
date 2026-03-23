@@ -272,6 +272,21 @@ const DEFAULT_GENERAL_RESOURCES = [
     url: "https://skoll.org/skoll-awardees/", cta: "Browse Awardees",
     tags: ["Social Enterprise", "Nonprofit", "Foundation", "Funding", "Research", "Global"], featured: false, dateAdded: "2026-03-10",
   },
+  // ── Added 2026-03-23 ─────────────────────────────────────────
+  {
+    emoji: "🌍", title: "Mulago Foundation Portfolio", subtitle: "Evidence-based grantees working at massive scale",
+    desc: "Mulago Foundation funds organizations with the potential for massive impact on people living in extreme poverty. Their portfolio is a curated list of high-signal nonprofits and social enterprises — weighted toward global health, agriculture, and economic empowerment in sub-Saharan Africa — selected for evidence of effectiveness and scale potential.",
+    tips: ["Browse the portfolio as a career target list for high-credibility global impact orgs", "Mulago's selection criteria emphasize evidence and scale — useful framing for interviews", "Many portfolio orgs are mid-size and actively hiring senior talent", "Cross-reference with Skoll Awardees and Audacious Project for overlapping top-tier orgs"],
+    url: "https://www.mulagofoundation.org/portfolio", cta: "Browse Portfolio",
+    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Research", "Africa", "Global"], featured: false, dateAdded: "2026-03-23",
+  },
+  {
+    emoji: "💡", title: "DRK Foundation Portfolio", subtitle: "Venture philanthropy for early-stage nonprofits",
+    desc: "Draper Richards Kaplan Foundation provides 3-year early-stage grants plus active management support to high-potential nonprofits — modeled on venture capital. Their portfolio surfaces organizations that are pre-scale but backed by rigorous due diligence, making it a useful list for spotting rising orgs before they become widely known.",
+    tips: ["Use the portfolio to find high-potential early-stage orgs not yet on mainstream radar", "DRK's VC-style model means portfolio orgs often have strong operational support behind them", "Great hunting ground for students interested in joining a nonprofit at a formative stage", "Cross-reference portfolio orgs on Candid and ProPublica for financials and leadership data"],
+    url: "https://www.drkfoundation.org/portfolio/", cta: "Browse Portfolio",
+    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Research", "North America", "Global"], featured: false, dateAdded: "2026-03-23",
+  },
 ];
 
 const DEFAULT_HBS_RESOURCES = [
