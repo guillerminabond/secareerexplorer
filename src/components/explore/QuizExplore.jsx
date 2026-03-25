@@ -447,15 +447,34 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
     });
   };
 
-  const canProceed = () => (answers[getFilterKey(currentQ, currentStream)] || []).length > 0;
+  // All options have zero matches given prior answers — nothing left to select.
+  const allOptionsDisabled = quizOptions.length > 0 && quizOptions.every(o => (optionCounts[o] ?? 0) === 0);
+
+  const canProceed = () =>
+    allOptionsDisabled || (answers[getFilterKey(currentQ, currentStream)] || []).length > 0;
+
+  const goToResults = () => {
+    setShowResults(true);
+    setEditingFilters({ ...answers });
+    setSaveAllDone(false);
+  };
 
   const next = () => {
+    // If every option on this step is disabled there's nothing to select —
+    // jump straight to results rather than walking through dead questions.
+    if (allOptionsDisabled || step >= currentStream.questions.length - 1) {
+      goToResults();
+    } else {
+      setStep(step + 1);
+    }
+  };
+
+  // Skip this question without selecting anything and continue the normal flow.
+  const skipQuestion = () => {
     if (step < currentStream.questions.length - 1) {
       setStep(step + 1);
     } else {
-      setShowResults(true);
-      setEditingFilters({ ...answers });
-      setSaveAllDone(false);
+      goToResults();
     }
   };
 
@@ -650,8 +669,12 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
           })}
         </div>
 
-        {/* Live match preview */}
-        {Object.values(answers).some(v => v?.length) && (
+        {/* Live match preview / all-disabled notice */}
+        {allOptionsDisabled ? (
+          <p className="text-xs text-amber-600 mb-4 text-center">
+            No options match your previous selections — skip ahead to see results.
+          </p>
+        ) : Object.values(answers).some(v => v?.length) && (
           <p className="text-xs text-gray-400 mb-4 text-center">
             {previewCount > 0
               ? <><span className="font-medium text-gray-600">{previewCount} org{previewCount !== 1 ? "s" : ""}</span> match your selections so far</>
@@ -661,20 +684,35 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
         )}
 
         {/* Navigation */}
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
           {step > 0
             ? <button onClick={() => setStep(step - 1)} className="text-sm text-gray-500 hover:text-gray-700 py-2">← Back</button>
             : <div />
           }
-          <button
-            onClick={next}
-            disabled={!canProceed()}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              canProceed() ? "bg-crimson text-white hover:bg-crimson/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {step < currentStream.questions.length - 1 ? "Next →" : "See Results →"}
-          </button>
+          <div className="flex items-center gap-4">
+            {/* Skip link — only shown when there are valid options but none are picked */}
+            {!allOptionsDisabled && (
+              <button
+                onClick={skipQuestion}
+                className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+              >
+                Skip question →
+              </button>
+            )}
+            <button
+              onClick={next}
+              disabled={!canProceed()}
+              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                canProceed() ? "bg-crimson text-white hover:bg-crimson/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {allOptionsDisabled
+                ? "Skip to Results →"
+                : step < currentStream.questions.length - 1
+                  ? "Next →"
+                  : "See Results →"}
+            </button>
+          </div>
         </div>
       </div>
     );
