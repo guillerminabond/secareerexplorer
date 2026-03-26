@@ -85,16 +85,52 @@ async function replaceJunction(junctionTable, orgId, fkColumn, ids) {
   if (error) throw error
 }
 
+// ── In-memory cache ──────────────────────────────────────────
+// Shared across all components for the lifetime of the browser session.
+// Invalidated automatically after every mutation (create / update / delete).
+let _orgsCache  = null   // { data: Org[], ts: number } | null
+let _orgsFlight = null   // in-flight Promise (deduplicate simultaneous callers)
+const ORGS_TTL  = 3 * 60 * 1000  // 3 minutes
+
+/** Force the next fetchOrgs() call to hit the database */
+export function invalidateOrgsCache() {
+  _orgsCache  = null
+  _orgsFlight = null
+}
+
 // ── PUBLIC API ───────────────────────────────────────────────
 
-/** Fetch all organizations (flat, app-friendly format) */
+/**
+ * Fetch all organizations (flat, app-friendly format).
+ * Results are cached for 3 minutes.  Concurrent callers within the same
+ * tick share one in-flight request instead of issuing duplicate queries.
+ */
 export async function fetchOrgs() {
-  const { data, error } = await supabase
+  // 1. Serve from cache if still fresh
+  if (_orgsCache && (Date.now() - _orgsCache.ts) < ORGS_TTL) {
+    return _orgsCache.data
+  }
+  // 2. Deduplicate: if another caller already fired the request, piggyback
+  if (_orgsFlight) return _orgsFlight
+
+  // 3. Fire the request and cache the result
+  _orgsFlight = supabase
     .from('organizations')
     .select(ORG_SELECT)
     .order('name', { ascending: true })
-  if (error) throw error
-  return (data ?? []).map(transformOrg)
+    .then(({ data, error }) => {
+      _orgsFlight = null
+      if (error) throw error
+      const result = (data ?? []).map(transformOrg)
+      _orgsCache = { data: result, ts: Date.now() }
+      return result
+    })
+    .catch(err => {
+      _orgsFlight = null   // don't cache errors
+      throw err
+    })
+
+  return _orgsFlight
 }
 
 /** Create a new organization */
@@ -126,6 +162,7 @@ export async function createOrg(form) {
 
   const orgId = data.id
   await _saveJunctions(orgId, form)
+  invalidateOrgsCache()
   return orgId
 }
 
@@ -155,6 +192,7 @@ export async function updateOrg(id, form) {
   if (error) throw error
 
   await _saveJunctions(id, form)
+  invalidateOrgsCache()
 }
 
 /**
@@ -171,6 +209,7 @@ export async function updateSavesCount(orgId, delta) {
 export async function deleteOrg(id) {
   const { error } = await supabase.from('organizations').delete().eq('id', id)
   if (error) throw error
+  invalidateOrgsCache()
 }
 
 /** Fetch all lookup table options (for dropdowns / filters) */
