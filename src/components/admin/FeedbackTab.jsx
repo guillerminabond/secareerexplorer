@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Star, Archive, ArchiveRestore, Trash2, ChevronDown,
   MessageSquare, Send, Loader2, Search, X, AlertTriangle
@@ -13,62 +13,38 @@ const TYPE_COLORS = {
   "Other":           "bg-gray-100 text-gray-600",
 };
 
-const FILTER_TABS   = ["All", "Starred", "Archived"];
-const TYPE_OPTIONS  = ["All Types", "General", "Bug", "Feature Request", "Missing Org", "Other"];
-const LS_KEY        = "hbs_admin_fb_prefs";
-
-// ── localStorage helpers (starred + archived only) ────────────
-function loadPrefs() {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return { starred: [], archived: [] };
-    const p = JSON.parse(raw);
-    return {
-      starred:  Array.isArray(p.starred)  ? p.starred  : [],
-      archived: Array.isArray(p.archived) ? p.archived : [],
-    };
-  } catch { return { starred: [], archived: [] }; }
-}
-
-function savePrefs(prefs) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(prefs)); } catch {}
-}
+const FILTER_TABS  = ["All", "Starred", "Archived"];
+const TYPE_OPTIONS = ["All Types", "General", "Bug", "Feature Request", "Missing Org", "Other"];
 
 export default function FeedbackTab({ feedback: initialFeedback }) {
-  const [items,       setItems]       = useState(initialFeedback);
-  const [prefs,       setPrefs]       = useState(loadPrefs);   // { starred: id[], archived: id[] }
+  const [items,        setItems]        = useState(initialFeedback);
   const [activeFilter, setActiveFilter] = useState("All");
-  const [typeFilter,  setTypeFilter]  = useState("All Types");
-  const [search,      setSearch]      = useState("");
-  const [expanded,    setExpanded]    = useState(null);
+  const [typeFilter,   setTypeFilter]   = useState("All Types");
+  const [search,       setSearch]       = useState("");
+  const [expanded,     setExpanded]     = useState(null);
   const [commentDraft, setCommentDraft] = useState({});
-  const [saving,      setSaving]      = useState({});
-  const [saveError,   setSaveError]   = useState({});   // id → error string
-  const [deleting,    setDeleting]    = useState(null);
+  const [saving,       setSaving]       = useState({});
+  const [saveError,    setSaveError]    = useState({});
+  const [deleting,     setDeleting]     = useState(null);
 
   useEffect(() => { setItems(initialFeedback); }, [initialFeedback]);
 
-  // Persist prefs to localStorage whenever they change
-  useEffect(() => { savePrefs(prefs); }, [prefs]);
+  // ── Optimistic patch helper ───────────────────────────────────
+  const patch = (id, updates) =>
+    setItems(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
 
-  // ── Star / archive (localStorage only, no DB) ─────────────────
-  const toggleStar = useCallback((id) => {
-    setPrefs(p => {
-      const starred = p.starred.includes(id)
-        ? p.starred.filter(x => x !== id)
-        : [...p.starred, id];
-      return { ...p, starred };
-    });
-  }, []);
+  // ── Star / archive (DB-backed, optimistic) ────────────────────
+  const toggleStar = async (id, current) => {
+    patch(id, { starred: !current });
+    try { await updateFeedback(id, { starred: !current }); }
+    catch { patch(id, { starred: current }); }
+  };
 
-  const toggleArchive = useCallback((id) => {
-    setPrefs(p => {
-      const archived = p.archived.includes(id)
-        ? p.archived.filter(x => x !== id)
-        : [...p.archived, id];
-      return { ...p, archived };
-    });
-  }, []);
+  const toggleArchive = async (id, current) => {
+    patch(id, { archived: !current });
+    try { await updateFeedback(id, { archived: !current }); }
+    catch { patch(id, { archived: current }); }
+  };
 
   // ── Admin comment (DB-backed) ─────────────────────────────────
   const saveComment = async (id) => {
@@ -98,25 +74,16 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
     setDeleting(null);
   };
 
-  // ── Merge DB items with localStorage prefs ────────────────────
-  const enriched = useMemo(() =>
-    items.map(f => ({
-      ...f,
-      starred:  prefs.starred.includes(f.id),
-      archived: prefs.archived.includes(f.id),
-    })),
-  [items, prefs]);
-
   // ── Counts ────────────────────────────────────────────────────
   const counts = useMemo(() => ({
-    All:      enriched.filter(f => !f.archived).length,
-    Starred:  enriched.filter(f => f.starred && !f.archived).length,
-    Archived: enriched.filter(f => f.archived).length,
-  }), [enriched]);
+    All:      items.filter(f => !f.archived).length,
+    Starred:  items.filter(f => f.starred && !f.archived).length,
+    Archived: items.filter(f => f.archived).length,
+  }), [items]);
 
   // ── Filtered list ─────────────────────────────────────────────
   const filtered = useMemo(() => {
-    let list = enriched;
+    let list = items;
     if (activeFilter === "Starred")       list = list.filter(f => f.starred && !f.archived);
     else if (activeFilter === "Archived") list = list.filter(f => f.archived);
     else                                  list = list.filter(f => !f.archived);
@@ -215,7 +182,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
                       {/* Star */}
                       <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                         <button
-                          onClick={() => toggleStar(f.id)}
+                          onClick={() => toggleStar(f.id, f.starred)}
                           className={`p-1 rounded transition-colors ${f.starred ? "text-amber-400 hover:text-amber-500" : "text-gray-200 hover:text-amber-300"}`}
                           title={f.starred ? "Unstar" : "Star"}
                         >
@@ -258,7 +225,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
                       <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1 justify-end">
                           <button
-                            onClick={() => toggleArchive(f.id)}
+                            onClick={() => toggleArchive(f.id, f.archived)}
                             className={`p-1.5 rounded transition-colors ${
                               f.archived
                                 ? "text-[#A51C30] hover:bg-red-50"
@@ -358,7 +325,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
         )}
       </div>
 
-      <p className="text-xs text-gray-400 text-right">{filtered.length} of {enriched.length} entries shown</p>
+      <p className="text-xs text-gray-400 text-right">{filtered.length} of {items.length} entries shown</p>
     </div>
   );
 }
