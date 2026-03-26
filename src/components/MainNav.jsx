@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Lock, MessageSquare } from "lucide-react";
+import { MessageSquare, HelpCircle, LogOut } from "lucide-react";
 import FeedbackModal from "./FeedbackModal";
+import HowToUseModal from "./HowToUseModal";
 import { useAdmin } from "@/contexts/AdminContext";
 
 export default function MainNav() {
@@ -10,27 +11,19 @@ export default function MainNav() {
   const p = location.pathname;
   const { adminMode, logout } = useAdmin();
 
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [showFeedback,  setShowFeedback]  = useState(false);
+  const [showHowToUse, setShowHowToUse]  = useState(false);
 
   // Active state derived from URL
   const isExploreActive   = p === "/" || p.startsWith("/explore");
   const isAllOrgsActive   = p.startsWith("/all-orgs");
   const isLearnMoreActive = p.startsWith("/learn-more");
   const isResourcesActive = p.startsWith("/resources");
-  const isHowToUseActive  = p.startsWith("/how-to-use");
 
   const tabCls = (active) =>
     `flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
       active ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
     }`;
-
-  const handleAdminClick = async () => {
-    if (adminMode) {
-      await logout();
-    } else {
-      navigate("/admin");
-    }
-  };
 
   return (
     <>
@@ -45,7 +38,7 @@ export default function MainNav() {
               Explore
             </button>
 
-            {/* All Organizations — direct link, sub-nav handled by AllOrgsLayout */}
+            {/* All Organizations */}
             <button onClick={() => navigate("/all-orgs/database")} className={tabCls(isAllOrgsActive)}>
               All Organizations
             </button>
@@ -59,15 +52,12 @@ export default function MainNav() {
             <button onClick={() => navigate("/resources")} className={tabCls(isResourcesActive)}>
               Resources
             </button>
-
-            {/* How to Use */}
-            <button onClick={() => navigate("/how-to-use")} className={tabCls(isHowToUseActive)}>
-              How to Use
-            </button>
           </div>
 
-          {/* Feedback + Admin — pinned right */}
+          {/* Right-side actions — pinned */}
           <div className="flex-shrink-0 border-l border-gray-100 px-3 sm:px-4 self-stretch flex items-center gap-2">
+
+            {/* Feedback */}
             <button
               onClick={() => setShowFeedback(true)}
               title="Send feedback"
@@ -77,27 +67,32 @@ export default function MainNav() {
               <span className="hidden sm:inline">Feedback</span>
             </button>
 
-            {/* Admin — orange dot when active, click to toggle */}
+            {/* How to Use */}
             <button
-              onClick={handleAdminClick}
-              title={adminMode ? "Exit admin mode" : "Admin panel"}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border ${
-                adminMode
-                  ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
-                  : "text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-gray-50"
-              }`}
+              onClick={() => setShowHowToUse(true)}
+              title="How to use this platform"
+              className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 border border-gray-200 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-red-50 transition-all"
             >
-              <Lock className="w-3 h-3" />
-              <span className="hidden sm:inline">Admin</span>
-              {adminMode && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-              )}
+              <HelpCircle className="w-3.5 h-3.5" />
             </button>
+
+            {/* Log out of Admin — only visible when in admin mode */}
+            {adminMode && (
+              <button
+                onClick={() => logout()}
+                title="Log out of admin"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+              >
+                <LogOut className="w-3 h-3" />
+                <span className="hidden sm:inline">Log out</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {showFeedback  && <FeedbackModal  onClose={() => setShowFeedback(false)}  />}
+      {showHowToUse  && <HowToUseModal  onClose={() => setShowHowToUse(false)}  />}
     </>
   );
 }
