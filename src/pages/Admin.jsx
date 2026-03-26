@@ -2,25 +2,25 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchOrgs, deleteOrg } from "@/api/organizationsApi";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
+import { fetchFeedback } from "@/api/feedbackApi";
 import OrgForm from "@/components/admin/OrgForm";
-import { Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock, Loader2, UserPlus, LogOut, Users } from "lucide-react";
+import FeedbackTab from "@/components/admin/FeedbackTab";
+import NominationsTab from "@/components/admin/NominationsTab";
+import OrgMappingTab from "@/components/admin/OrgMappingTab";
+import {
+  Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock,
+  Loader2, UserPlus, LogOut, Users, MessageSquare, Grid3x3,
+  Building2, ListChecks, Star
+} from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
-import { sanitizeUrl } from "@/lib/security";
 import { supabase } from "@/api/supabaseClient";
 
-// ── Nomination status badge ───────────────────────────────────
-function StatusBadge({ status }) {
-  if (status === "approved") return <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle className="w-3 h-3" />Approved</span>;
-  if (status === "rejected") return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full"><XCircle className="w-3 h-3" />Rejected</span>;
-  return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"><Clock className="w-3 h-3" />Pending</span>;
-}
-
-// ── Users tab ─────────────────────────────────────────────────
+// ── Users tab ─────────────────────────────────────────────────────
 function UsersTab() {
   const [newEmail,    setNewEmail]    = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [creating,    setCreating]    = useState(false);
-  const [createMsg,   setCreateMsg]   = useState(null); // { type: "success"|"error", text }
+  const [createMsg,   setCreateMsg]   = useState(null);
 
   const handleCreate = async () => {
     setCreateMsg(null);
@@ -108,24 +108,36 @@ function UsersTab() {
   );
 }
 
+// ── Tab config ────────────────────────────────────────────────────
+const TABS = [
+  { id: "orgs",        label: "Organizations", icon: Building2  },
+  { id: "nominations", label: "Nominations",   icon: ListChecks },
+  { id: "feedback",    label: "Feedback",      icon: MessageSquare },
+  { id: "mapping",     label: "Mapping",       icon: Grid3x3   },
+  { id: "users",       label: "Users",         icon: Users      },
+];
+
 export default function Admin() {
   const { adminMode, authLoading, login, logout } = useAdmin();
   const [email,     setEmail]     = useState("");
   const [pw,        setPw]        = useState("");
   const [pwError,   setPwError]   = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
-  const [adminTab,  setAdminTab]  = useState("orgs"); // "orgs" | "nominations" | "users"
+  const [activeTab, setActiveTab] = useState("orgs");
 
-  // Organizations state
-  const [orgs,        setOrgs]        = useState([]);
-  const [loadingOrgs, setLoadingOrgs] = useState(true);
+  // Data state
+  const [orgs,         setOrgs]         = useState([]);
+  const [nominations,  setNominations]  = useState([]);
+  const [feedback,     setFeedback]     = useState([]);
+  const [loadingOrgs,  setLoadingOrgs]  = useState(true);
+  const [loadingNoms,  setLoadingNoms]  = useState(true);
+  const [loadingFb,    setLoadingFb]    = useState(true);
+
+  // Org management
   const [editing,     setEditing]     = useState(null);
   const [deleting,    setDeleting]    = useState(null);
 
-  // Nominations state
-  const [nominations,  setNominations]  = useState([]);
-  const [loadingNoms,  setLoadingNoms]  = useState(true);
-  const [expandedNom,  setExpandedNom]  = useState(null);
+  // Nomination approval flow (full-page form)
   const [approvingNom, setApprovingNom] = useState(null);
 
   const handleLogin = async () => {
@@ -151,8 +163,19 @@ export default function Admin() {
     finally { setLoadingNoms(false); }
   };
 
+  const loadFeedback = async () => {
+    setLoadingFb(true);
+    try { const data = await fetchFeedback(); setFeedback(data); }
+    catch (err) { console.error("Error loading feedback:", err); }
+    finally { setLoadingFb(false); }
+  };
+
   useEffect(() => {
-    if (adminMode) { loadOrgs(); loadNominations(); }
+    if (adminMode) {
+      loadOrgs();
+      loadNominations();
+      loadFeedback();
+    }
   }, [adminMode]);
 
   const handleDelete = async (id) => {
@@ -160,12 +183,6 @@ export default function Admin() {
     catch (err) { console.error("Error deleting org:", err); }
     setDeleting(null);
     loadOrgs();
-  };
-
-  const handleReject = async (id) => {
-    try { await updateNominationStatus(id, "rejected"); }
-    catch (err) { console.error("Error rejecting nomination:", err); }
-    loadNominations();
   };
 
   const handleApproveAfterSave = async (nomId) => {
@@ -176,7 +193,7 @@ export default function Admin() {
     loadNominations();
   };
 
-  // ── Auth loading ───────────────────────────────────────────────
+  // ── Auth loading ──────────────────────────────────────────────
   if (authLoading) {
     return (
       <div className="bg-gray-50 flex items-center justify-center py-24">
@@ -185,7 +202,7 @@ export default function Admin() {
     );
   }
 
-  // ── Login screen ──────────────────────────────────────────────
+  // ── Login screen ─────────────────────────────────────────────
   if (!adminMode) {
     return (
       <div className="bg-gray-50 flex items-center justify-center py-24">
@@ -230,7 +247,7 @@ export default function Admin() {
     );
   }
 
-  // ── Org edit form ─────────────────────────────────────────────
+  // ── Org edit form ────────────────────────────────────────────
   if (editing !== null) {
     return (
       <div className="bg-gray-50">
@@ -250,7 +267,7 @@ export default function Admin() {
     );
   }
 
-  // ── Approve nomination → OrgForm pre-filled ───────────────────
+  // ── Approve nomination → OrgForm pre-filled ──────────────────
   if (approvingNom !== null) {
     const n = approvingNom;
     const prefilledOrg = {
@@ -262,7 +279,9 @@ export default function Admin() {
     return (
       <div className="bg-gray-50">
         <div className="max-w-2xl mx-auto px-6 py-8">
-          <button onClick={() => setApprovingNom(null)} className="text-sm text-gray-400 hover:text-gray-600 mb-2">← Back to nominations</button>
+          <button onClick={() => setApprovingNom(null)} className="text-sm text-gray-400 hover:text-gray-600 mb-2">
+            ← Back to nominations
+          </button>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-800">
             <strong>Approving nomination:</strong> {n.name}{n.hbs_connection ? ` — "${n.hbs_connection}"` : ""}
           </div>
@@ -279,90 +298,116 @@ export default function Admin() {
     );
   }
 
-  // ── Main admin panel ──────────────────────────────────────────
-  const pendingCount = nominations.filter(n => n.status === "pending").length;
+  // ── Derived counts for badges ─────────────────────────────────
+  const pendingCount  = nominations.filter(n => n.status === "pending").length;
+  const unreadFbCount = feedback.filter(f => !f.archived && !f.starred).length;
+  const starredCount  = feedback.filter(f => f.starred && !f.archived).length;
 
+  // ── Main admin panel ─────────────────────────────────────────
   return (
-    <div className="bg-gray-50">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* Header with logout */}
+        {/* ── Header ── */}
         <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setAdminTab("orgs")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${adminTab === "orgs" ? "bg-[#A51C30] text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
-            >
-              Organizations
-            </button>
-            <button
-              onClick={() => setAdminTab("nominations")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${adminTab === "nominations" ? "bg-[#A51C30] text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
-            >
-              Nominations
-              {pendingCount > 0 && (
-                <span className={`text-xs rounded-full px-1.5 py-0.5 ${adminTab === "nominations" ? "bg-white/30 text-white" : "bg-amber-500 text-white"}`}>{pendingCount}</span>
-              )}
-            </button>
-            <button
-              onClick={() => setAdminTab("users")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${adminTab === "users" ? "bg-[#A51C30] text-white shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
-            >
-              <Users className="w-3.5 h-3.5" /> Users
-            </button>
-          </div>
-
           <div className="flex items-center gap-2">
-            {adminTab === "orgs" && (
-              <button
-                onClick={() => setEditing({})}
-                className="flex items-center gap-2 px-4 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium"
-              >
-                <Plus className="w-4 h-4" /> Add Organization
-              </button>
-            )}
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Log out"
-            >
-              <LogOut className="w-4 h-4" /> Log out
-            </button>
+            <Lock className="w-4 h-4 text-[#A51C30]" />
+            <h1 className="text-base font-bold text-gray-900">Admin Dashboard</h1>
           </div>
+          <button
+            onClick={logout}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-gray-100"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" /> Log out
+          </button>
+        </div>
+
+        {/* ── Tab nav ── */}
+        <div className="flex gap-1 mb-6 flex-wrap">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const badge =
+              tab.id === "nominations" ? pendingCount :
+              tab.id === "feedback"    ? (starredCount || unreadFbCount) :
+              null;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all
+                  ${isActive
+                    ? "bg-[#A51C30] text-white shadow-sm"
+                    : "text-gray-500 hover:text-gray-800 hover:bg-white hover:border-gray-100 border border-transparent"}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+                {badge > 0 && (
+                  <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center font-semibold
+                    ${isActive ? "bg-white/25 text-white" : "bg-[#A51C30] text-white"}`}>
+                    {badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Add org button (only shown on orgs tab) */}
+          {activeTab === "orgs" && (
+            <button
+              onClick={() => setEditing({})}
+              className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium hover:bg-[#8e1728] transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Organization
+            </button>
+          )}
         </div>
 
         {/* ── Organizations tab ── */}
-        {adminTab === "orgs" && (
+        {activeTab === "orgs" && (
           loadingOrgs ? (
-            <div className="text-sm text-gray-400">Loading…</div>
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading organizations…
+            </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                    <th className="px-4 py-3"></th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Type</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">HQ</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {orgs.map(org => (
-                    <tr key={org.id} className="hover:bg-gray-50">
+                    <tr key={org.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-gray-900">{org.name}</td>
-                      <td className="px-4 py-3 text-gray-500">{org.org_type}</td>
+                      <td className="px-4 py-3 text-gray-500 hidden sm:table-cell text-sm">{org.org_type}</td>
+                      <td className="px-4 py-3 text-gray-400 hidden md:table-cell text-xs">{org.hq}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 justify-end">
-                          <button onClick={() => setEditing(org)} className="text-gray-400 hover:text-[#A51C30]">
-                            <Pencil className="w-4 h-4" />
+                          <button
+                            onClick={() => setEditing(org)}
+                            className="p-1.5 text-gray-400 hover:text-[#A51C30] hover:bg-red-50 rounded transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
                           {deleting === org.id ? (
                             <div className="flex items-center gap-1">
-                              <button onClick={() => handleDelete(org.id)} className="text-xs text-red-500 font-medium">Confirm</button>
-                              <button onClick={() => setDeleting(null)} className="text-xs text-gray-400">Cancel</button>
+                              <button onClick={() => handleDelete(org.id)} className="text-xs text-red-500 font-medium hover:text-red-700">Confirm</button>
+                              <button onClick={() => setDeleting(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
                             </div>
                           ) : (
-                            <button onClick={() => setDeleting(org.id)} className="text-gray-400 hover:text-red-500">
-                              <Trash2 className="w-4 h-4" />
+                            <button
+                              onClick={() => setDeleting(org.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
@@ -370,83 +415,63 @@ export default function Admin() {
                     </tr>
                   ))}
                   {orgs.length === 0 && (
-                    <tr><td colSpan={3} className="text-center py-8 text-gray-400">No organizations yet.</td></tr>
+                    <tr>
+                      <td colSpan={4} className="text-center py-12 text-gray-400">No organizations yet.</td>
+                    </tr>
                   )}
                 </tbody>
               </table>
+              {orgs.length > 0 && (
+                <div className="px-4 py-2 border-t border-gray-50 bg-gray-50">
+                  <p className="text-xs text-gray-400">{orgs.length} organizations</p>
+                </div>
+              )}
             </div>
           )
         )}
 
         {/* ── Nominations tab ── */}
-        {adminTab === "nominations" && (
+        {activeTab === "nominations" && (
           loadingNoms ? (
-            <div className="text-sm text-gray-400">Loading…</div>
-          ) : (
-            <div className="space-y-3">
-              {nominations.length === 0 && (
-                <div className="text-center py-12 text-gray-400 text-sm">No nominations yet.</div>
-              )}
-              {nominations.map(n => (
-                <div key={n.id} className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                  <div
-                    className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50"
-                    onClick={() => setExpandedNom(expandedNom === n.id ? null : n.id)}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <StatusBadge status={n.status} />
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">{n.name}</p>
-                        {n.org_type && <p className="text-xs text-gray-400">{n.org_type}</p>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      <span className="text-xs text-gray-400">{new Date(n.created_at).toLocaleDateString()}</span>
-                      {n.status === "pending" && (
-                        <div className="flex gap-1.5">
-                          <button
-                            onClick={e => { e.stopPropagation(); setApprovingNom(n); }}
-                            className="flex items-center gap-1 text-xs bg-green-500 text-white rounded px-2 py-1 hover:bg-green-600"
-                          >
-                            <CheckCircle className="w-3 h-3" /> Approve
-                          </button>
-                          <button
-                            onClick={e => { e.stopPropagation(); handleReject(n.id); }}
-                            className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 rounded px-2 py-1 hover:bg-red-50 hover:text-red-600"
-                          >
-                            <XCircle className="w-3 h-3" /> Reject
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {expandedNom === n.id && (
-                    <div className="border-t border-gray-100 px-4 py-3 space-y-2 bg-gray-50 text-xs text-gray-600">
-                      {n.website && (() => {
-                        const safeHref = sanitizeUrl(n.website);
-                        return <p><span className="font-semibold text-gray-500">Website:</span>{" "}
-                          {safeHref
-                            ? <a href={safeHref} target="_blank" rel="noopener noreferrer" className="text-[#A51C30] hover:underline">{n.website}</a>
-                            : <span className="text-red-400 italic">Invalid URL</span>}
-                        </p>;
-                      })()}
-                      {n.description   && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
-                      {n.cause_areas   && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
-                      {n.regions       && <p><span className="font-semibold text-gray-500">Regions:</span> {n.regions}</p>}
-                      {n.hbs_connection && <p><span className="font-semibold text-gray-500">HBS connection:</span> {n.hbs_connection}</p>}
-                      {n.submitted_by  && <p><span className="font-semibold text-gray-500">Submitted by:</span> {n.submitted_by}</p>}
-                      {n.admin_notes   && <p><span className="font-semibold text-gray-500">Admin notes:</span> {n.admin_notes}</p>}
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading nominations…
             </div>
+          ) : (
+            <NominationsTab
+              nominations={nominations}
+              onReload={loadNominations}
+              onApprove={n => setApprovingNom(n)}
+            />
+          )
+        )}
+
+        {/* ── Feedback tab ── */}
+        {activeTab === "feedback" && (
+          loadingFb ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading feedback…
+            </div>
+          ) : (
+            <FeedbackTab
+              feedback={feedback}
+              onReload={loadFeedback}
+            />
+          )
+        )}
+
+        {/* ── Mapping tab ── */}
+        {activeTab === "mapping" && (
+          loadingOrgs ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400 py-8">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading organizations…
+            </div>
+          ) : (
+            <OrgMappingTab orgs={orgs} />
           )
         )}
 
         {/* ── Users tab ── */}
-        {adminTab === "users" && <UsersTab />}
+        {activeTab === "users" && <UsersTab />}
 
       </div>
     </div>

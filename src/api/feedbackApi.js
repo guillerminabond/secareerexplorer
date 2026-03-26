@@ -69,8 +69,31 @@ export async function submitFeedback({ name, email, type, message }) {
 export async function fetchFeedback() {
   const { data, error } = await supabase
     .from('site_feedback')
-    .select('*')
+    .select('id, name, email, type, message, created_at, starred, archived, admin_comment')
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
+}
+
+/**
+ * Update admin-managed fields on a feedback entry.
+ * Requires the add_feedback_admin_columns.sql migration to have been run.
+ * @param {string} id
+ * @param {{ starred?: boolean, archived?: boolean, admin_comment?: string }} updates
+ */
+export async function updateFeedback(id, updates) {
+  const { error } = await supabase
+    .from('site_feedback')
+    .update(updates)
+    .eq('id', id)
+  if (error) throw error
+}
+
+/** Delete a feedback entry (admin only) */
+export async function deleteFeedback(id) {
+  const { error } = await supabase
+    .from('site_feedback')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
 }
