@@ -10,7 +10,7 @@ import OrgMappingTab from "@/components/admin/OrgMappingTab";
 import {
   Plus, Pencil, Trash2, Lock, CheckCircle, XCircle, Clock,
   Loader2, UserPlus, LogOut, Users, MessageSquare, Grid3x3,
-  Building2, ListChecks, Star
+  Building2, ListChecks, Mail, KeyRound
 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { supabase } from "@/api/supabaseClient";
@@ -119,11 +119,13 @@ const TABS = [
 
 export default function Admin() {
   const { adminMode, authLoading, login, logout } = useAdmin();
-  const [email,     setEmail]     = useState("");
-  const [pw,        setPw]        = useState("");
-  const [pwError,   setPwError]   = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [activeTab, setActiveTab] = useState("orgs");
+  const [email,        setEmail]        = useState("");
+  const [pw,           setPw]           = useState("");
+  const [loginError,   setLoginError]   = useState("");
+  const [loggingIn,    setLoggingIn]    = useState(false);
+  const [loginMode,    setLoginMode]    = useState("password"); // "password" | "magic"
+  const [magicSent,    setMagicSent]    = useState(false);
+  const [activeTab,    setActiveTab]    = useState("orgs");
 
   // Data state
   const [orgs,         setOrgs]         = useState([]);
@@ -141,12 +143,28 @@ export default function Admin() {
   const [approvingNom, setApprovingNom] = useState(null);
 
   const handleLogin = async () => {
-    if (!email.trim() || !pw) { setPwError("Email and password are required."); return; }
+    if (!email.trim() || !pw) { setLoginError("Email and password are required."); return; }
     setLoggingIn(true);
-    setPwError("");
+    setLoginError("");
     const { error } = await login(email.trim(), pw);
     setLoggingIn(false);
-    if (error) { setPwError("Incorrect email or password."); setPw(""); }
+    if (error) { setLoginError("Incorrect email or password."); setPw(""); }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email.trim()) { setLoginError("Please enter your email address."); return; }
+    setLoggingIn(true);
+    setLoginError("");
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: `${window.location.origin}/admin`,
+      },
+    });
+    setLoggingIn(false);
+    if (error) { setLoginError(error.message || "Failed to send magic link."); }
+    else { setMagicSent(true); }
   };
 
   const loadOrgs = async () => {
@@ -207,41 +225,110 @@ export default function Admin() {
     return (
       <div className="bg-gray-50 flex items-center justify-center py-24">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
+
+          {/* Header */}
           <div className="flex items-center gap-2 mb-6">
             <Lock className="w-5 h-5 text-[#A51C30]" />
             <h1 className="text-lg font-bold text-gray-900">Admin Login</h1>
           </div>
+
+          {/* Mode toggle */}
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-5">
+            <button
+              onClick={() => { setLoginMode("password"); setLoginError(""); setMagicSent(false); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                loginMode === "password" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <KeyRound className="w-3 h-3" /> Password
+            </button>
+            <button
+              onClick={() => { setLoginMode("magic"); setLoginError(""); setMagicSent(false); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                loginMode === "magic" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Mail className="w-3 h-3" /> Magic link
+            </button>
+          </div>
+
+          {/* Email (shared) */}
           <input
             type="email"
             placeholder="Admin email"
             autoFocus
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
             value={email}
-            onChange={e => { setEmail(e.target.value); setPwError(""); }}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            onChange={e => { setEmail(e.target.value); setLoginError(""); setMagicSent(false); }}
+            onKeyDown={e => e.key === "Enter" && (loginMode === "password" ? handleLogin() : handleMagicLink())}
           />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
-            value={pw}
-            onChange={e => { setPw(e.target.value); setPwError(""); }}
-            onKeyDown={e => e.key === "Enter" && handleLogin()}
-          />
-          <div className="flex justify-end mb-3">
-            <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-[#A51C30] transition-colors">
-              Forgot password?
-            </Link>
-          </div>
-          {pwError && <p className="text-red-500 text-xs mb-3">{pwError}</p>}
-          <button
-            onClick={handleLogin}
-            disabled={loggingIn}
-            className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loggingIn ? "Verifying…" : "Login"}
-          </button>
+
+          {/* ── Password mode ── */}
+          {loginMode === "password" && (
+            <>
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                value={pw}
+                onChange={e => { setPw(e.target.value); setLoginError(""); }}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+              />
+              <div className="flex justify-end mb-4">
+                <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-[#A51C30] transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              {loginError && <p className="text-red-500 text-xs mb-3">{loginError}</p>}
+              <button
+                onClick={handleLogin}
+                disabled={loggingIn}
+                className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loggingIn ? "Verifying…" : "Login"}
+              </button>
+            </>
+          )}
+
+          {/* ── Magic link mode ── */}
+          {loginMode === "magic" && (
+            <>
+              {magicSent ? (
+                <div className="text-center py-3">
+                  <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Mail className="w-5 h-5 text-green-500" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-800 mb-1">Check your inbox</p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    A magic link has been sent to <strong>{email}</strong>. Click it to log in — no password needed.
+                  </p>
+                  <button
+                    onClick={() => { setMagicSent(false); setLoginError(""); }}
+                    className="text-xs text-[#A51C30] hover:underline"
+                  >
+                    Send again
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400 mb-4">
+                    We'll email you a secure link. Click it to sign in instantly — no password required.
+                  </p>
+                  {loginError && <p className="text-red-500 text-xs mb-3">{loginError}</p>}
+                  <button
+                    onClick={handleMagicLink}
+                    disabled={loggingIn}
+                    className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {loggingIn ? "Sending…" : "Send magic link"}
+                  </button>
+                </>
+              )}
+            </>
+          )}
+
         </div>
       </div>
     );
