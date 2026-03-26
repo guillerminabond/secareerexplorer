@@ -2,17 +2,15 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Lock, MessageSquare } from "lucide-react";
 import FeedbackModal from "./FeedbackModal";
-import AdminAuthModal from "./AdminAuthModal";
 import { useAdmin } from "@/contexts/AdminContext";
 
 export default function MainNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const p = location.pathname;
-  const { adminMode, setAdminMode } = useAdmin();
+  const { adminMode, logout } = useAdmin();
 
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showAdminAuth, setShowAdminAuth] = useState(false);
 
   // Active state derived from URL
   const isExploreActive   = p === "/" || p.startsWith("/explore");
@@ -26,11 +24,11 @@ export default function MainNav() {
       active ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
     }`;
 
-  const handleAdminClick = () => {
+  const handleAdminClick = async () => {
     if (adminMode) {
-      setAdminMode(false); // toggle off
+      await logout();
     } else {
-      setShowAdminAuth(true); // open auth modal
+      navigate("/admin");
     }
   };
 
@@ -100,12 +98,6 @@ export default function MainNav() {
       </div>
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
-      {showAdminAuth && (
-        <AdminAuthModal
-          onSuccess={() => { setAdminMode(true); setShowAdminAuth(false); }}
-          onClose={() => setShowAdminAuth(false)}
-        />
-      )}
     </>
   );
 }

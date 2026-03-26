@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   Star, Archive, ArchiveRestore, Trash2, ChevronDown, ChevronUp,
-  MessageSquare, Send, Loader2, Search, X
+  MessageSquare, Send, Loader2, Search, X, AlertTriangle
 } from "lucide-react";
 import { updateFeedback, deleteFeedback } from "@/api/feedbackApi";
 
@@ -25,6 +25,7 @@ export default function FeedbackTab({ feedback: initialFeedback, onReload }) {
   const [commentDraft, setCommentDraft] = useState({});
   const [saving, setSaving] = useState({});
   const [deleting, setDeleting] = useState(null);
+  const [migrationNeeded, setMigrationNeeded] = useState(false);
 
   // Keep items in sync when parent reloads
   React.useEffect(() => { setItems(initialFeedback); }, [initialFeedback]);
@@ -33,16 +34,22 @@ export default function FeedbackTab({ feedback: initialFeedback, onReload }) {
   const patch = (id, updates) =>
     setItems(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
 
+  const handleUpdateError = (err) => {
+    if (err?.message?.includes("security policy") || err?.code === "42501") {
+      setMigrationNeeded(true);
+    }
+  };
+
   const toggleStar = async (id, current) => {
     patch(id, { starred: !current });
     try { await updateFeedback(id, { starred: !current }); }
-    catch { patch(id, { starred: current }); }
+    catch (err) { patch(id, { starred: current }); handleUpdateError(err); }
   };
 
   const toggleArchive = async (id, current) => {
     patch(id, { archived: !current });
     try { await updateFeedback(id, { archived: !current }); }
-    catch { patch(id, { archived: current }); }
+    catch (err) { patch(id, { archived: current }); handleUpdateError(err); }
   };
 
   const saveComment = async (id) => {
@@ -54,6 +61,7 @@ export default function FeedbackTab({ feedback: initialFeedback, onReload }) {
       setCommentDraft(d => ({ ...d, [id]: undefined }));
     } catch (err) {
       console.error("Failed to save comment:", err);
+      handleUpdateError(err);
     } finally {
       setSaving(s => ({ ...s, [id]: false }));
     }
@@ -99,6 +107,21 @@ export default function FeedbackTab({ feedback: initialFeedback, onReload }) {
 
   return (
     <div className="space-y-4">
+      {/* ── Migration banner ── */}
+      {migrationNeeded && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
+          <div>
+            <p className="font-semibold mb-0.5">Database migration required</p>
+            <p className="text-xs text-amber-700">
+              Star, archive, and notes features require running{" "}
+              <code className="bg-amber-100 px-1 rounded font-mono">add_feedback_admin_columns.sql</code>{" "}
+              in your Supabase SQL editor. Feedback viewing works normally.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Filter bar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Tabs */}

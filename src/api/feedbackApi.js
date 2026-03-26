@@ -69,10 +69,17 @@ export async function submitFeedback({ name, email, type, message }) {
 export async function fetchFeedback() {
   const { data, error } = await supabase
     .from('site_feedback')
-    .select('id, name, email, type, message, created_at, starred, archived, admin_comment')
+    .select('*')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data || []
+  // Normalise: add defaults for admin columns added in add_feedback_admin_columns.sql
+  // so the UI works both before and after the migration is applied.
+  return (data || []).map(f => ({
+    starred:       false,
+    archived:      false,
+    admin_comment: null,
+    ...f,
+  }))
 }
 
 /**
