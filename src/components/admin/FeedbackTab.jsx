@@ -99,7 +99,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
       );
     }
     return list;
-  }, [enriched, activeFilter, typeFilter, search]);
+  }, [items, activeFilter, typeFilter, search]);
 
   return (
     <div className="space-y-4">

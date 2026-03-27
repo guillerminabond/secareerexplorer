@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { X } from "lucide-react";
+import { X, ArrowLeftRight } from "lucide-react";
 
 // ── Dimension definitions ────────────────────────────────────────
 const DIMENSIONS = [
@@ -162,7 +162,16 @@ export default function OrgMappingTab({ orgs }) {
             </select>
           </div>
 
-          <div className="sm:mt-5 w-full sm:w-auto">
+          {/* Transpose button */}
+          <div className="sm:mt-5 flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => { setDim1(dim2); setDim2(dim1); }}
+              title="Swap rows and columns"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-red-50 transition-all whitespace-nowrap"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
+              <span>Transpose</span>
+            </button>
             <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 text-center border border-gray-100 whitespace-nowrap">
               {orgs.length} orgs mapped
             </div>
