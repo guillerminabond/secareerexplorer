@@ -123,6 +123,40 @@ export default function OrgModal({ org, onClose, onEdit }) {
                 <ExternalLink className="w-4 h-4" /> Visit Website
               </a>
             )}
+
+            {/* ── Quality signals ── */}
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Research</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  {
+                    label: "Glassdoor",
+                    url: `https://www.glassdoor.com/Search/results.htm?keyword=${encodeURIComponent(org.name)}`,
+                    emoji: "⭐",
+                  },
+                  {
+                    label: "News",
+                    url: `https://www.google.com/search?q=${encodeURIComponent(org.name)}&tbm=nws`,
+                    emoji: "📰",
+                  },
+                  {
+                    label: "Crunchbase",
+                    url: `https://www.crunchbase.com/search/organizations?q=${encodeURIComponent(org.name)}`,
+                    emoji: "📊",
+                  },
+                ].map(({ label, url, emoji }) => (
+                  <a
+                    key={label}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:border-crimson/40 hover:text-crimson transition-colors bg-white"
+                  >
+                    <span>{emoji}</span> {label} <ExternalLink className="w-3 h-3 opacity-50" />
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
