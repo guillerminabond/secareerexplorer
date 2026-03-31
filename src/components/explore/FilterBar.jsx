@@ -2,6 +2,19 @@ import React, { useState } from "react";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
 import { REGION_HIERARCHY, PARENT_REGIONS, getParent } from "@/constants/regions";
 
+// Sub-segments keyed by cause area — mirrors CAUSE_DETAILS.subtopics in LearnMore
+const CAUSE_SUBTOPICS = {
+  "Poverty Alleviation":      ["Cash Transfers", "Food Security", "Water & Sanitation", "Refugee Support", "Rural Livelihoods", "Safety Nets"],
+  "Economic Development":     ["Small Business Lending", "Workforce Development", "Supply Chain Inclusion", "Rural Entrepreneurship", "Trade & Market Access", "Job Creation"],
+  "Global Health":            ["Infectious Disease", "Maternal & Child Health", "Mental Health", "Health Systems Strengthening", "Access to Medicines", "Pandemic Preparedness"],
+  "Education":                ["Early Childhood", "K–12 Reform", "Higher Ed Access", "EdTech & Digital Learning", "Workforce Training", "Girls' Education"],
+  "Climate & Energy":         ["Renewable Energy", "Carbon Markets", "Sustainable Agriculture", "Climate Adaptation", "Circular Economy", "Green Finance"],
+  "Gender & Social Justice":  ["Women's Economic Empowerment", "Gender-Based Violence", "Reproductive Health", "Pay Equity", "LGBTQ+ Rights", "Racial Justice"],
+  "Financial Inclusion":      ["Microfinance", "Mobile Banking", "Savings & Insurance", "Credit Scoring", "Remittances", "MSME Lending"],
+  "Housing & Community":      ["Affordable Housing", "CDFIs", "Neighborhood Revitalization", "Homelessness", "Tenant Advocacy", "Mixed-Income Communities"],
+  "Arts & Culture":           ["Arts Education", "Community Arts", "Cultural Preservation", "Creative Economy", "Performing Arts", "Social Practice Art"],
+};
+
 const NON_REGION_FILTERS = {
   cause_areas:        ["Poverty Alleviation", "Economic Development", "Global Health", "Education", "Climate & Energy", "Gender & Social Justice", "Financial Inclusion", "Housing & Community", "Arts & Culture"],
   org_type:           ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"],
@@ -12,7 +25,7 @@ const NON_REGION_FILTERS = {
 const LABEL_MAP = {
   cause_areas:        "Cause Areas",
   org_type:           "Org Type",
-  role_types:         "Role",
+  role_types:         "Ecosystem Role",
   target_populations: "Target Populations",
 };
 
@@ -124,39 +137,82 @@ export default function FilterBar({ active, onChange }) {
     const updated = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
-    onChange({ ...active, [key]: updated });
+
+    let next = { ...active, [key]: updated };
+
+    // When a cause area is removed, also clear any sub-segments that belong to it
+    if (key === "cause_areas" && current.includes(value)) {
+      const removedSubtopics = new Set(CAUSE_SUBTOPICS[value] || []);
+      const remainingSubtopics = (active.cause_subtopics || []).filter(s => !removedSubtopics.has(s));
+      next.cause_subtopics = remainingSubtopics;
+    }
+
+    onChange(next);
   };
 
   const clearAll = () => onChange({});
   const hasFilters = Object.values(active).some(v => v?.length > 0);
 
+  // Build the flat list of sub-segment options for whichever cause areas are active
+  const activeCauses = active.cause_areas || [];
+  const availableSubtopics = activeCauses.flatMap(c => CAUSE_SUBTOPICS[c] || []);
+
   return (
     <div className="space-y-3">
       {/* Non-region filters (flat chips) */}
       {Object.entries(NON_REGION_FILTERS).map(([key, values]) => (
-        <div key={key}>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            {LABEL_MAP[key] || key.replace(/_/g, " ")}
-          </p>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
-            {values.map(v => {
-              const isActive = (active[key] || []).includes(v);
-              return (
-                <button
-                  key={v}
-                  onClick={() => toggle(key, v)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[36px] ${
-                    isActive
-                      ? "bg-crimson text-white border-crimson"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
-                  }`}
-                >
-                  {v}
-                </button>
-              );
-            })}
+        <React.Fragment key={key}>
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              {LABEL_MAP[key] || key.replace(/_/g, " ")}
+            </p>
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
+              {values.map(v => {
+                const isActive = (active[key] || []).includes(v);
+                return (
+                  <button
+                    key={v}
+                    onClick={() => toggle(key, v)}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[36px] ${
+                      isActive
+                        ? "bg-crimson text-white border-crimson"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+          {/* Sub-segment row: appears inline under Cause Areas when ≥1 cause is selected */}
+          {key === "cause_areas" && availableSubtopics.length > 0 && (
+            <div className="ml-3 pl-3 border-l-2 border-gray-100">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Sub-segments
+              </p>
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
+                {availableSubtopics.map(v => {
+                  const isActive = (active.cause_subtopics || []).includes(v);
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => toggle("cause_subtopics", v)}
+                      className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs border transition-colors min-h-[30px] ${
+                        isActive
+                          ? "bg-crimson text-white border-crimson"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-crimson hover:text-crimson"
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </React.Fragment>
       ))}
 
       {/* Hierarchical region filter */}

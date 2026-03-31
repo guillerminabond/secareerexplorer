@@ -174,7 +174,7 @@ const ALL_FILTER_OPTIONS = {
 };
 
 const FILTER_LABELS = {
-  cause_areas: "Cause Areas", org_type: "Org Type", role_types: "Role Types",
+  cause_areas: "Cause Areas", org_type: "Org Type", role_types: "Ecosystem Role",
   regions: "Regions", target_populations: "Target Populations",
 };
 
@@ -272,7 +272,7 @@ function sortByRelevance(options, relevanceMap, selectedCauses) {
 
 /** Export the filtered org list as a CSV download. */
 function exportToCSV(orgs) {
-  const headers = ["Name", "Type", "Cause Areas", "Regions", "Role Types", "Website"];
+  const headers = ["Name", "Type", "Cause Areas", "Regions", "Ecosystem Role", "Website"];
   const rows = orgs.map(o => [
     o.name || "",
     o.org_type || "",
@@ -509,7 +509,7 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
     return (
       <div className="max-w-2xl mx-auto py-8">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Your Impact Career</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Organizations that Match your Interests</h2>
           <p className="text-sm text-gray-500">Describe what you're looking for, or pick a starting point below.</p>
         </div>
 
@@ -701,10 +701,7 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
             )}
             <button
               onClick={next}
-              disabled={!canProceed()}
-              className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                canProceed() ? "bg-crimson text-white hover:bg-crimson/90" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-              }`}
+              className="px-5 py-2.5 rounded-lg text-sm font-medium transition-colors bg-crimson text-white hover:bg-crimson/90"
             >
               {allOptionsDisabled
                 ? "Skip to Results →"
@@ -786,7 +783,7 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
             Want to help these organizations?
           </p>
           <p className="text-xs text-gray-500 mb-3">
-            Explore entry paths through fellowships, alumni networks, and curated job boards.
+            Explore resources through fellowships, alumni networks, and curated job boards.
           </p>
           <div className="flex flex-wrap gap-2">
             {unsavedCount > 0 && !saveAllDone ? (
@@ -814,7 +811,7 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
               onClick={handleViewPaths}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 bg-crimson text-white rounded-lg hover:bg-crimson/90 transition-colors"
             >
-              View entry paths
+              View Resources
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

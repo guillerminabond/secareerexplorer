@@ -9,7 +9,7 @@ import { PARENT_REGIONS } from "@/constants/regions";
 const RESOURCE_TAG_GROUPS = {
   "Org Type": ["Nonprofit", "Foundation", "Impact Investing", "Social Enterprise", "B Corp", "Startup"],
   "Geography": PARENT_REGIONS,
-  "Function": ["Career Support", "Research", "Mentorship", "Alumni", "Fellowship", "Funding", "Community"],
+  "Function": ["Job Board", "Mentorship", "Thought Leadership", "Funding"],
 };
 
 const GEO_TAGS = new Set(RESOURCE_TAG_GROUPS["Geography"]);
@@ -100,7 +100,7 @@ const DEFAULT_GENERAL_RESOURCES = [
     desc: "World's largest source on social sector organizations and funders — ideal for researching nonprofits' financials before applying.",
     tips: ["Look up 990s to understand org financials", "Research a foundation's grant history", "Find contact info for program officers"],
     url: "https://candid.org", cta: "Visit Candid",
-    tags: ["Nonprofit", "Foundation", "Research", "Global"], featured: false,
+    tags: ["Nonprofit", "Foundation", "Thought Leadership", "Global"], featured: false,
   },
   {
     emoji: "🚀", title: "Escape the City", subtitle: "Career Transition Platform",
@@ -136,119 +136,119 @@ const DEFAULT_GENERAL_RESOURCES = [
     desc: "Connects over 1.3 million monthly visitors with nonprofit jobs, internships, and volunteer opportunities across 250,000+ organizations worldwide. Filter by cause area, location, and role type.",
     tips: ["Use the cause area filter to narrow by your issue", "Set up job alerts for new postings", "Check the salary data tool before interviews"],
     url: "https://www.idealist.org", cta: "Browse Jobs",
-    tags: ["Nonprofit", "Global", "North America", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Global", "North America", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🎯", title: "Probably Good", subtitle: "Evidence-based high-impact career guide & job board",
     desc: "Nonprofit offering a curated job board of high-impact roles across cause areas like global health, climate, animal welfare, and AI safety. Also provides free career guides, cause area profiles, career advising, and workshops — all research-backed.",
     tips: ["Use cause area and experience-level filters to narrow results", "Subscribe to the weekly newsletter for new high-impact roles", "Book a free 1-on-1 career advising session to talk through your options"],
     url: "https://jobs.probablygood.org", cta: "Browse Impact Jobs",
-    tags: ["Nonprofit", "Global", "Career Support", "Research"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Global", "Job Board", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🏦", title: "AVPN", subtitle: "Asia's largest social investment network",
     desc: "The Asian Venture Philanthropy Network connects 600+ members across Asia — funders, foundations, family offices, and corporates — working to deploy capital for social impact. Offers fellowships, research, and member career boards.",
     tips: ["Check the AVPN Academy for Impact Investing and Philanthropy Fellowships", "Browse member org career pages via avpn.asia/members/careers", "Attend the annual AVPN Global Conference for networking"],
     url: "https://avpn.asia", cta: "Explore Network",
-    tags: ["Foundation", "Impact Investing", "Asia", "Fellowship", "Research", "Community"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Foundation", "Impact Investing", "Asia", "Mentorship", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🕌", title: "Wamda", subtitle: "MENA startup and social enterprise ecosystem",
     desc: "Leading platform for the Middle East & North Africa startup ecosystem, covering social enterprises, impact startups, and funding trends. Provides research reports, founder resources, and sector analysis for the region.",
     tips: ["Browse the social enterprise tag for curated MENA impact stories", "Download the annual MENA funding report for sector trends", "Follow Wamda X fellowship for founder opportunities"],
     url: "https://www.wamda.com", cta: "Read Research",
-    tags: ["Startup", "Social Enterprise", "Middle East & North Africa", "Research", "Community"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Startup", "Social Enterprise", "Middle East & North Africa", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🤝", title: "Net Impact", subtitle: "100K+ students and professionals driving impact",
     desc: "Global community of 100,000+ impact-oriented students and professionals across 250+ chapters at top MBA programs. Offers career treks, case competitions, peer mentorship, and an impact-focused job board.",
     tips: ["Check if your school has a Net Impact chapter", "Attend the annual conference for recruiter access", "Use the Pro membership job board for exclusive impact roles"],
     url: "https://www.netimpact.org", cta: "Join Community",
-    tags: ["Nonprofit", "Global", "North America", "Community", "Alumni", "Mentorship", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Global", "North America", "Mentorship", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "📊", title: "GIIN Career Center", subtitle: "Impact investing job board",
     desc: "The Global Impact Investing Network hosts the leading job board for impact investing roles — from analyst to fund manager. Free for GIIN members to post, ensuring high-quality listings from verified impact investors.",
     tips: ["Filter by role type: investment, measurement, or operations", "Set alerts for new postings in your region", "GIIN membership gives access to salary benchmarking data"],
     url: "https://jobs.thegiin.org", cta: "Browse Impact Jobs",
-    tags: ["Impact Investing", "Foundation", "Global", "North America", "Europe", "Career Support", "Research"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Impact Investing", "Foundation", "Global", "North America", "Europe", "Job Board", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🗺️", title: "80,000 Hours Job Board", subtitle: "Curated high-impact job board with salary data",
     desc: "Curated job board by the 80,000 Hours team featuring high-impact roles across AI safety, global health, biosecurity, policy, and more. Includes salary data and highlighted 'especially impactful' roles — part of a broader career guide grounded in 10+ years of research.",
     tips: ["Use the salary filter to compare compensation across orgs", "Look for 'highlighted' roles — these are hand-picked as especially impactful", "Subscribe to job alerts filtered by your cause area", "Pair with the 80,000 Hours career guide for strategic planning"],
     url: "https://jobs.80000hours.org", cta: "Browse Jobs",
-    tags: ["Nonprofit", "Global", "Career Support", "Research"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Global", "Job Board", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "📈", title: "ImpactAlpha", subtitle: "Impact investing news, jobs, and deal flow",
     desc: "The leading news platform for the impact investing industry, covering deal flow, fund launches, and sector trends. Features a weekly curated job board with roles at organizations like Acumen, Ford Foundation, and Goldman Sachs.",
     tips: ["Subscribe to the free 'The Week's Jobs' newsletter for curated impact roles", "Read the 'Breaking into Impact Investing' series for MBA career pathways", "Use the deal flow tracker to understand which sectors are attracting capital"],
     url: "https://impactalpha.com", cta: "Browse Jobs & News",
-    tags: ["Impact Investing", "Social Enterprise", "Global", "North America", "Europe", "Africa", "Career Support", "Research", "Funding"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Impact Investing", "Social Enterprise", "Global", "North America", "Europe", "Africa", "Job Board", "Thought Leadership", "Funding"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "📚", title: "Stanford Social Innovation Review", subtitle: "Thought leadership for social change",
     desc: "Published by Stanford University, SSIR is the leading publication on social innovation — covering social enterprise strategy, impact measurement, nonprofit management, and philanthropy. Offers articles, case studies, webinars, and podcasts.",
     tips: ["Start with the Social Enterprise topic page for curated frameworks and case studies", "Subscribe to the free newsletter for weekly research highlights", "Use SSIR articles to prep for social enterprise interviews — recruiters value candidates who reference them"],
     url: "https://ssir.org", cta: "Read Articles",
-    tags: ["Nonprofit", "Foundation", "Social Enterprise", "Global", "Research"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Foundation", "Social Enterprise", "Global", "Thought Leadership"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🌱", title: "Acumen Academy", subtitle: "Free courses and fellowships for changemakers",
     desc: "Global school for social change with 600,000+ learners across 193 countries. Offers free online courses and competitive regional fellowships across Colombia, East Africa, India, Pakistan, Southeast Asia, UK, and West Africa.",
     tips: ["Start with the free Social Entrepreneurship 101 course (5 weeks)", "Apply for a regional Fellowship for immersive leadership development and a global alumni network of 1,800+", "Use the Moral Leadership course to strengthen your impact narrative for interviews"],
     url: "https://acumenacademy.org", cta: "Explore Courses",
-    tags: ["Social Enterprise", "Nonprofit", "Global", "Africa", "Asia", "Latin America & Caribbean", "Europe", "Fellowship", "Mentorship", "Community"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Social Enterprise", "Nonprofit", "Global", "Africa", "Asia", "Latin America & Caribbean", "Europe", "Mentorship"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "💻", title: "Tech Jobs for Good", subtitle: "Tech roles at mission-driven organizations",
     desc: "Job board focused exclusively on technology roles (engineering, data analytics, design, product, IT) at social impact organizations. Features impact area filters including Clean Energy, Climate Change, Education, Health, and Human Rights.",
     tips: ["Filter by job function (Engineering, Data, Design, Product) and impact area", "Create an email alert for new tech-for-good listings", "Use 'Get Matched to Companies' for personalized recommendations", "Check salary ranges — most listings include them"],
     url: "https://techjobsforgood.com", cta: "Browse Tech Jobs",
-    tags: ["Nonprofit", "Social Enterprise", "Startup", "North America", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Social Enterprise", "Startup", "North America", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🏛️", title: "Public Sector Job Board", subtitle: "Tech & innovation jobs in government",
     desc: "Biweekly Substack newsletter sharing tech and innovation jobs in government and public sector. Over 5,000 subscribers. Covers federal, state, and local roles for people who want to bring tech skills to public service.",
     tips: ["Subscribe for free biweekly job roundups", "Great for candidates interested in civic tech and gov-tech career paths", "Pair with the Tech Jobs for Good board for a wider tech-for-impact search"],
     url: "https://publicsectorjobboard.substack.com", cta: "Subscribe",
-    tags: ["Nonprofit", "North America", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "North America", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🤖", title: "ImpactSource", subtitle: "AI-powered social impact job aggregator",
     desc: "Built by TechChange, ImpactSource aggregates 4,000+ jobs across 200+ social impact organizations. Filter by roles, skills, location, org stage, sector, and salary. Also offers a talent network and Impact Coach for personalized career guidance.",
     tips: ["Use the skill-based filters to find roles matching your MBA specialization", "Join the Talent Network for direct recruiter outreach", "Try the Impact Coach for 1-on-1 guidance", "Filter by org stage (startup, growth, established) to match your risk preference"],
     url: "https://www.impactsource.ai/jobs", cta: "Search Jobs",
-    tags: ["Nonprofit", "Social Enterprise", "Startup", "Global", "North America", "Africa", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Social Enterprise", "Startup", "Global", "North America", "Africa", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🌊", title: "Rippleworks Job Board", subtitle: "1,000+ jobs at world-changing social ventures",
     desc: "Curated by Rippleworks Foundation, this board aggregates 1,000+ open positions across 200+ social impact organizations worldwide, spanning every business function from entry-level to senior.",
     tips: ["Filter by seniority and salary to find MBA-level roles", "Browse the companies tab to explore Rippleworks portfolio orgs", "Join the talent network to be matched with ventures", "Strong coverage of Africa, India, and Latin America — complements US-focused boards"],
     url: "https://careers.rippleworks.org/jobs", cta: "Search Impact Jobs",
-    tags: ["Social Enterprise", "Startup", "Nonprofit", "Global", "Africa", "Asia", "Latin America & Caribbean", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Social Enterprise", "Startup", "Nonprofit", "Global", "Africa", "Asia", "Latin America & Caribbean", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "✨", title: "The Impact Job", subtitle: "Handpicked social impact jobs with salary transparency",
     desc: "Community-driven platform that handpicks social impact jobs — every listing is vetted and includes salary information for transparency. Joined by 40,000+ social impact professionals via their weekly newsletter.",
     tips: ["Subscribe to the weekly newsletter for curated handpicked jobs, tips, and social impact news", "Every listing shows salary — use it to benchmark compensation", "Filter by full-time, part-time, and contract roles"],
     url: "https://www.theimpactjob.com", cta: "Browse Jobs",
-    tags: ["Nonprofit", "Social Enterprise", "Global", "North America", "Europe", "Career Support", "Community"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Social Enterprise", "Global", "North America", "Europe", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🚀", title: "Wellfound", subtitle: "130K+ startup jobs with equity info",
     desc: "Formerly AngelList Talent, Wellfound is the largest startup job platform with 130,000+ remote and local listings. Includes salary ranges and equity information for every role — essential for finding roles at impact-driven startups, social enterprises, and B Corps.",
     tips: ["Filter by job function and location to narrow results", "Look for YC-funded and B Corp-tagged startups for impact alignment", "Every listing shows salary AND equity — useful for comparing startup offers", "Use 'Growing fast' tags to spot high-momentum social ventures"],
     url: "https://wellfound.com/jobs", cta: "Search Startup Jobs",
-    tags: ["Startup", "B Corp", "Social Enterprise", "Global", "North America", "Career Support"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Startup", "B Corp", "Social Enterprise", "Global", "North America", "Job Board"], featured: false, dateAdded: "2026-03-04",
   },
   {
     emoji: "🌐", title: "Impactpool", subtitle: "UN and international development careers",
     desc: "Career platform specializing in United Nations, multilateral, and international development roles. Features jobs at UNDP, UNHCR, UNFCCC, AfDB, and other major international bodies.",
     tips: ["Search by organization (UN agencies, World Bank, regional development banks)", "Explore the Fellowship program for structured career prep", "Check the weekly newsletter for curated international roles", "Strong coverage of Africa, Europe, and Asia — ideal for global development careers"],
     url: "https://www.impactpool.org/search", cta: "Search International Jobs",
-    tags: ["Nonprofit", "Foundation", "Global", "Africa", "Europe", "Asia", "Career Support", "Fellowship"], featured: false, dateAdded: "2026-03-04",
+    tags: ["Nonprofit", "Foundation", "Global", "Africa", "Europe", "Asia", "Job Board", "Mentorship"], featured: false, dateAdded: "2026-03-04",
   },
   // ── Added 2026-03-10 ─────────────────────────────────────────
   {
@@ -256,21 +256,21 @@ const DEFAULT_GENERAL_RESOURCES = [
     desc: "Free searchable database of IRS Form 990 filings for 1.8 million nonprofit organizations. Pull audited financials, executive compensation, board composition, and program expenses — essential due diligence before applying or partnering.",
     tips: ["Search an org before an interview to understand their financials and leadership", "Compare executive compensation across similar organizations", "Check program expense ratios to assess operational efficiency", "Download full 990 PDFs for granular program and grantee data"],
     url: "https://projects.propublica.org/nonprofits/", cta: "Search Nonprofits",
-    tags: ["Nonprofit", "Foundation", "Research", "North America"], featured: false, dateAdded: "2026-03-10",
+    tags: ["Nonprofit", "Foundation", "Thought Leadership", "North America"], featured: false, dateAdded: "2026-03-10",
   },
   {
     emoji: "🌟", title: "Audacious Project", subtitle: "TED's collaborative philanthropic initiative",
     desc: "TED's Audacious Project funds bold ideas for social change at scale. The grantees directory showcases organizations receiving transformational philanthropy — useful for identifying top-tier nonprofits and tracking what major funders are backing globally.",
     tips: ["Browse grantees to discover organizations tackling systemic issues at scale", "Use as a signal for which orgs are attracting major philanthropic capital", "Many grantees post jobs — search their career pages directly", "Follow announcements to track emerging impact areas gaining funder attention"],
     url: "https://audaciousproject.org/grantees", cta: "Browse Grantees",
-    tags: ["Nonprofit", "Foundation", "Social Enterprise", "Funding", "Research", "Global"], featured: false, dateAdded: "2026-03-10",
+    tags: ["Nonprofit", "Foundation", "Social Enterprise", "Funding", "Thought Leadership", "Global"], featured: false, dateAdded: "2026-03-10",
   },
   {
     emoji: "🏆", title: "Skoll Awardees", subtitle: "Skoll Foundation's social entrepreneurship award directory",
     desc: "The Skoll Foundation's award program recognizes the world's leading social entrepreneurs driving large-scale, positive change. The awardee directory is a who's-who of proven social enterprises — useful for researching top organizations, career targets, and how the field's most impactful leaders define success.",
     tips: ["Browse by year and sector to discover high-credibility organizations", "Use awardee orgs as career targets — the Skoll award signals organizational excellence", "Review awardee profiles for frameworks on how social entrepreneurs measure impact", "Cross-reference with Audacious Project and Candid for a fuller picture of top-tier orgs"],
     url: "https://skoll.org/skoll-awardees/", cta: "Browse Awardees",
-    tags: ["Social Enterprise", "Nonprofit", "Foundation", "Funding", "Research", "Global"], featured: false, dateAdded: "2026-03-10",
+    tags: ["Social Enterprise", "Nonprofit", "Foundation", "Funding", "Thought Leadership", "Global"], featured: false, dateAdded: "2026-03-10",
   },
   // ── Added 2026-03-23 ─────────────────────────────────────────
   {
@@ -278,30 +278,30 @@ const DEFAULT_GENERAL_RESOURCES = [
     desc: "Mulago Foundation funds organizations with the potential for massive impact on people living in extreme poverty. Their portfolio is a curated list of high-signal nonprofits and social enterprises — weighted toward global health, agriculture, and economic empowerment in sub-Saharan Africa — selected for evidence of effectiveness and scale potential.",
     tips: ["Browse the portfolio as a career target list for high-credibility global impact orgs", "Mulago's selection criteria emphasize evidence and scale — useful framing for interviews", "Many portfolio orgs are mid-size and actively hiring senior talent", "Cross-reference with Skoll Awardees and Audacious Project for overlapping top-tier orgs"],
     url: "https://www.mulagofoundation.org/portfolio", cta: "Browse Portfolio",
-    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Research", "Africa", "Global"], featured: false, dateAdded: "2026-03-23",
+    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Thought Leadership", "Africa", "Global"], featured: false, dateAdded: "2026-03-23",
   },
   {
     emoji: "💡", title: "DRK Foundation Portfolio", subtitle: "Venture philanthropy for early-stage nonprofits",
     desc: "Draper Richards Kaplan Foundation provides 3-year early-stage grants plus active management support to high-potential nonprofits — modeled on venture capital. Their portfolio surfaces organizations that are pre-scale but backed by rigorous due diligence, making it a useful list for spotting rising orgs before they become widely known.",
     tips: ["Use the portfolio to find high-potential early-stage orgs not yet on mainstream radar", "DRK's VC-style model means portfolio orgs often have strong operational support behind them", "Great hunting ground for students interested in joining a nonprofit at a formative stage", "Cross-reference portfolio orgs on Candid and ProPublica for financials and leadership data"],
     url: "https://www.drkfoundation.org/portfolio/", cta: "Browse Portfolio",
-    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Research", "North America", "Global"], featured: false, dateAdded: "2026-03-23",
+    tags: ["Nonprofit", "Social Enterprise", "Foundation", "Funding", "Thought Leadership", "North America", "Global"], featured: false, dateAdded: "2026-03-23",
   },
 ];
 
 const DEFAULT_HBS_RESOURCES = [
-  { title: "Social Enterprise Initiative",        url: "https://www.hbs.edu/socialenterprise/",                                                                                                    desc: "HBS's hub for SE education, research, and community.",                                                            tags: ["Community", "Research"],              featured: false },
-  { title: "Rock Center for Entrepreneurship",    url: "https://www.hbs.edu/entrepreneurship/",                                                                                                    desc: "Supports entrepreneurs including social enterprise founders.",                                                    tags: ["Community"],                          featured: false },
-  { title: "SECON — Social Enterprise Conference",url: "https://socialenterpriseconference.net/",                                                                                                  desc: "Annual student-run conference at the intersection of business and social impact.",                                tags: ["Community"],                          featured: false },
-  { title: "Social Enterprise Club",              url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/social-enterprise-club",                               desc: "HBS student club for social enterprise — events, treks, and recruiting.",                                         tags: ["Community", "Career Support"],        featured: false },
-  { title: "Impact Investing Club",               url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/impact-investing-club",                                desc: "HBS student club focused on impact investing careers and deal exposure.",                                          tags: ["Impact Investing", "Community"],      featured: false },
-  { title: "Education Club",                      url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/education-club",                                       desc: "HBS student club for MBAs pursuing careers in education.",                                                        tags: ["Community"],                          featured: false },
-  { title: "CPD Career Resources",                url: "https://www.hbs.edu/careers/",                                                                                                            desc: "HBS Career & Professional Development tools and employer database.",                                               tags: ["Career Support"],                     featured: false },
-  { title: "HBS Summer Fellows Program",          url: "https://www.hbs.edu/socialenterprise/mba-experience/careers/summer-fellowships",                                                          desc: "Funding for MBAs pursuing summer internships in the nonprofit and public sectors.",                                tags: ["Fellowship", "Funding", "Nonprofit"], featured: false },
-  { title: "Leadership Fellows Program",          url: "https://www.hbs.edu/socialenterprise/for-organizations/leadership-fellows/past-partners-fellows",                                         desc: "Post-MBA fellowship placing HBS graduates in senior leadership roles at nonprofits.",                             tags: ["Fellowship", "Nonprofit"],            featured: false },
-  { title: "HBS Alumni Directory",                url: "https://www.alumni.hbs.edu/community/Pages/directory.aspx",                                                                               desc: "Search and connect with HBS alumni by industry, role, and location.",                                             tags: ["Alumni"],                             featured: false },
-  { title: "12Twenty Mentorships",                url: "https://mba-business-harvard.12twenty.com/mentorships/home",                                                                              desc: "HBS platform to find and request mentorship from alumni across sectors.",                                          tags: ["Mentorship", "Alumni"],               featured: false },
-  { title: "SE Faculty & Research",               url: "https://www.hbs.edu/socialenterprise/faculty-research",                                                                                   desc: "HBS Social Enterprise Initiative faculty profiles and latest research.",                                           tags: ["Research"],                           featured: false },
+  { title: "Social Enterprise Initiative",        url: "https://www.hbs.edu/socialenterprise/",                                                                                                    desc: "HBS's hub for SE education, research, and community.",                                                            tags: ["Thought Leadership"],              featured: false },
+  { title: "Rock Center for Entrepreneurship",    url: "https://www.hbs.edu/entrepreneurship/",                                                                                                    desc: "Supports entrepreneurs including social enterprise founders.",                                                    tags: [],                          featured: false },
+  { title: "SECON — Social Enterprise Conference",url: "https://socialenterpriseconference.net/",                                                                                                  desc: "Annual student-run conference at the intersection of business and social impact.",                                tags: [],                          featured: false },
+  { title: "Social Enterprise Club",              url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/social-enterprise-club",                               desc: "HBS student club for social enterprise — events, treks, and recruiting.",                                         tags: ["Job Board"],        featured: false },
+  { title: "Impact Investing Club",               url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/impact-investing-club",                                desc: "HBS student club focused on impact investing careers and deal exposure.",                                          tags: ["Impact Investing"],      featured: false },
+  { title: "Education Club",                      url: "https://www.hbs.edu/mba/student-life/activities-government-and-clubs/student-clubs/education-club",                                       desc: "HBS student club for MBAs pursuing careers in education.",                                                        tags: [],                          featured: false },
+  { title: "CPD Career Resources",                url: "https://www.hbs.edu/careers/",                                                                                                            desc: "HBS Career & Professional Development tools and employer database.",                                               tags: ["Job Board"],                     featured: false },
+  { title: "HBS Summer Fellows Program",          url: "https://www.hbs.edu/socialenterprise/mba-experience/careers/summer-fellowships",                                                          desc: "Funding for MBAs pursuing summer internships in the nonprofit and public sectors.",                                tags: ["Mentorship", "Funding", "Nonprofit"], featured: false },
+  { title: "Leadership Fellows Program",          url: "https://www.hbs.edu/socialenterprise/for-organizations/leadership-fellows/past-partners-fellows",                                         desc: "Post-MBA fellowship placing HBS graduates in senior leadership roles at nonprofits.",                             tags: ["Mentorship", "Nonprofit"],            featured: false },
+  { title: "HBS Alumni Directory",                url: "https://www.alumni.hbs.edu/community/Pages/directory.aspx",                                                                               desc: "Search and connect with HBS alumni by industry, role, and location.",                                             tags: ["Mentorship"],                             featured: false },
+  { title: "12Twenty Mentorships",                url: "https://mba-business-harvard.12twenty.com/mentorships/home",                                                                              desc: "HBS platform to find and request mentorship from alumni across sectors.",                                          tags: ["Mentorship"],               featured: false },
+  { title: "SE Faculty & Research",               url: "https://www.hbs.edu/socialenterprise/faculty-research",                                                                                   desc: "HBS Social Enterprise Initiative faculty profiles and latest research.",                                           tags: ["Thought Leadership"],                           featured: false },
 ];
 
 // ── Resource Detail Modal ─────────────────────────────────────
@@ -518,16 +518,19 @@ const SORT_OPTIONS = [
   { value: "newest",   label: "Newest" },
 ];
 
-function SortControl({ value, onChange }) {
+function SortControl({ value, onChange, filtersActive }) {
+  const visibleOptions = filtersActive
+    ? SORT_OPTIONS.filter(o => o.value !== "featured")
+    : SORT_OPTIONS;
   return (
     <div className="flex items-center gap-1.5">
       <ArrowUpDown className="w-3 h-3 text-gray-400" />
       <select
-        value={value}
+        value={filtersActive && value === "featured" ? "az" : value}
         onChange={e => onChange(e.target.value)}
         className="text-xs text-gray-500 bg-transparent border-none outline-none cursor-pointer hover:text-gray-700"
       >
-        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        {visibleOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
   );
@@ -715,7 +718,7 @@ export default function Resources() {
               </span>
             </h2>
             <div className="flex items-center gap-3">
-              <SortControl value={sortOrder} onChange={v => { setGeneralPage(0); setSortOrder(v); }} />
+              <SortControl value={sortOrder} onChange={v => { setGeneralPage(0); setSortOrder(v); }} filtersActive={resourceTagFilters.length > 0} />
               {adminMode && (
                 <button
                   onClick={() => setEditingResource({ section: "general", index: null, data: { emoji: "🔗", title: "", subtitle: "", desc: "", tipsText: "", url: "", cta: "", tags: [], featured: false } })}

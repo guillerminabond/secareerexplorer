@@ -84,7 +84,10 @@ export default function OrgModal({ org, onClose, onEdit }) {
             <Section label="About" value={org.description} />
             <Section label="Size" value={org.size} />
             <Tags label="Cause Areas" items={org.cause_areas} />
-            <Tags label="Role Types" items={org.role_types} />
+            {org.cause_subtopics?.length > 0 && (
+              <Tags label="Sub-segments" items={org.cause_subtopics} />
+            )}
+            <Tags label="Ecosystem Role" items={org.role_types} />
             <Tags label="Regions" items={org.regions} />
             <Tags label="Target Populations" items={org.target_populations} />
 

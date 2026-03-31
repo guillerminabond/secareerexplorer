@@ -34,7 +34,8 @@ const ORG_SELECT = `
   org_cause_areas:organization_cause_areas(cause_area:cause_areas(id, name)),
   org_role_types:organization_role_types(role_type:role_types(id, name)),
   org_regions:organization_regions(region:regions(id, name)),
-  org_target_populations:organization_target_populations(target_population:target_populations(id, name))
+  org_target_populations:organization_target_populations(target_population:target_populations(id, name)),
+  org_cause_subtopics:organization_cause_subtopics(cause_subtopic:cause_subtopics(id, name))
 `
 
 // ── Transform joined row → flat app-friendly object ─────────
@@ -49,6 +50,7 @@ function transformOrg(row) {
     role_types:             (row.org_role_types         ?? []).map(x => x.role_type.name),
     regions:                (row.org_regions            ?? []).map(x => x.region.name),
     target_populations:     (row.org_target_populations ?? []).map(x => x.target_population.name),
+    cause_subtopics:        (row.org_cause_subtopics    ?? []).map(x => x.cause_subtopic.name),
     // scalar fields — passed through as-is
     saves:                  row.saves                  ?? 0,
     badge_alumni_work_here:  row.badge_alumni_work_here  ?? false,
@@ -59,6 +61,7 @@ function transformOrg(row) {
     org_role_types: undefined,
     org_regions: undefined,
     org_target_populations: undefined,
+    org_cause_subtopics: undefined,
     employee_range: undefined,
   }
 }
@@ -214,7 +217,7 @@ export async function deleteOrg(id) {
 
 /** Fetch all lookup table options (for dropdowns / filters) */
 export async function fetchLookups() {
-  const [orgTypes, causeAreas, roleTypes, regionsList, populations, empRanges] =
+  const [orgTypes, causeAreas, roleTypes, regionsList, populations, empRanges, causeSubtopics] =
     await Promise.all([
       supabase.from('org_types').select('id, name').order('name'),
       supabase.from('cause_areas').select('id, name').order('name'),
@@ -222,6 +225,7 @@ export async function fetchLookups() {
       supabase.from('regions').select('id, name').order('name'),
       supabase.from('target_populations').select('id, name').order('name'),
       supabase.from('employee_ranges').select('id, label, sort_order').order('sort_order'),
+      supabase.from('cause_subtopics').select('id, name, cause_area_id, cause_area:cause_areas(name)').order('name'),
     ])
   return {
     org_types:          (orgTypes.data     ?? []).map(r => r.name),
@@ -230,16 +234,25 @@ export async function fetchLookups() {
     regions:            (regionsList.data  ?? []).map(r => r.name),
     target_populations: (populations.data  ?? []).map(r => r.name),
     employee_ranges:    (empRanges.data    ?? []).map(r => r.label),
+    // cause_subtopics grouped by cause area name for easy lookup in forms/filters
+    cause_subtopics_by_cause: (causeSubtopics.data ?? []).reduce((acc, r) => {
+      const cause = r.cause_area?.name;
+      if (!cause) return acc;
+      if (!acc[cause]) acc[cause] = [];
+      acc[cause].push(r.name);
+      return acc;
+    }, {}),
   }
 }
 
 // ── Internal: save junction tables for an org ────────────────
 async function _saveJunctions(orgId, form) {
-  const [caRows, rtRows, rRows, tpRows] = await Promise.all([
+  const [caRows, rtRows, rRows, tpRows, csRows] = await Promise.all([
     lookupIds('cause_areas',        form.cause_areas        ?? []),
     lookupIds('role_types',         form.role_types         ?? []),
     lookupIds('regions',            form.regions            ?? []),
     lookupIds('target_populations', form.target_populations ?? []),
+    lookupIds('cause_subtopics',    form.cause_subtopics    ?? []),
   ])
 
   await Promise.all([
@@ -247,5 +260,6 @@ async function _saveJunctions(orgId, form) {
     replaceJunction('organization_role_types',         orgId, 'role_type_id',           rtRows.map(r => r.id)),
     replaceJunction('organization_regions',            orgId, 'region_id',              rRows.map(r => r.id)),
     replaceJunction('organization_target_populations', orgId, 'target_population_id',   tpRows.map(r => r.id)),
+    replaceJunction('organization_cause_subtopics',    orgId, 'cause_subtopic_id',      csRows.map(r => r.id)),
   ])
 }

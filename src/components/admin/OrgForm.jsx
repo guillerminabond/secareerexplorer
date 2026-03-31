@@ -66,10 +66,18 @@ const GroupedRegionCheck = ({ value = [], onChange }) => {
   );
 };
 
+// Org types that benefit from cause sub-segment tagging.
+// Impact Investing and Foundation orgs span many sub-segments by nature,
+// so sub-segment tags are only surfaced for Operator-type orgs.
+const OPERATOR_ORG_TYPES = new Set([
+  "Nonprofit", "B Corporation", "Hybrid", "Cooperative", "Government / Public Sector",
+]);
+
 export default function OrgForm({ org, onSave, onCancel }) {
   const [form, setForm] = useState(org || {
     name: "", description: "", website: "", org_type: "",
     cause_areas: [], role_types: [], regions: [], target_populations: [],
+    cause_subtopics: [],
     hbs_note: "", notable_alumni: "", size: "",
     hq: "", year_established: "", employees: ""
   });
@@ -150,6 +158,45 @@ export default function OrgForm({ org, onSave, onCancel }) {
       <Field label="Cause Areas">
         <MultiCheck options={lookups.cause_areas} value={form.cause_areas} onChange={v => set("cause_areas", v)} />
       </Field>
+
+      {/* Sub-segments: only shown for Operator-type orgs with at least one cause area selected */}
+      {OPERATOR_ORG_TYPES.has(form.org_type) && form.cause_areas.length > 0 && lookups.cause_subtopics_by_cause && (
+        <Field label="Cause Sub-segments">
+          <p className="text-xs text-gray-400 mb-2">
+            Showing sub-segments for selected cause areas. Tag the specific focus areas this org works in.
+          </p>
+          <div className="space-y-2">
+            {form.cause_areas.map(cause => {
+              const subtopics = lookups.cause_subtopics_by_cause[cause] || [];
+              if (!subtopics.length) return null;
+              return (
+                <div key={cause}>
+                  <p className="text-xs font-semibold text-gray-500 mb-1">{cause}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {subtopics.map(sub => (
+                      <label key={sub} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={(form.cause_subtopics || []).includes(sub)}
+                          onChange={() => {
+                            const current = form.cause_subtopics || [];
+                            const next = current.includes(sub)
+                              ? current.filter(v => v !== sub)
+                              : [...current, sub];
+                            set("cause_subtopics", next);
+                          }}
+                          className="accent-crimson"
+                        />
+                        {sub}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Field>
+      )}
 
       <Field label="Role Types">
         <MultiCheck options={lookups.role_types} value={form.role_types} onChange={v => set("role_types", v)} />
