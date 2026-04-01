@@ -35,12 +35,17 @@ export default function AllOrgs() {
   // Pre-populate filters if navigated here from the dashboard
   const [filters, setFilters] = useState(() => location.state?.filters || {});
 
+  const pathnameRef = React.useRef(location.pathname);
+  const navigateRef = React.useRef(navigate);
+  navigateRef.current = navigate;
   useEffect(() => {
-    // Clear router state after consuming it so back-nav doesn't re-apply stale filters
+    // Clear router state after consuming it so back-nav doesn't re-apply stale filters.
+    // We only want this to fire once on mount, so we read refs rather than listing
+    // location/navigate as deps (which would re-run on every navigation).
     if (location.state?.filters) {
-      navigate(location.pathname, { replace: true, state: null });
+      navigateRef.current(pathnameRef.current, { replace: true, state: null });
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // intentional: runs only on mount to consume initial route state
   const [search, setSearch] = useState("");
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [savedIds, setSavedIds] = useState(() => {
@@ -64,9 +69,11 @@ export default function AllOrgs() {
       .finally(() => setLoading(false));
   };
 
+  const reloadOrgsRef = React.useRef(reloadOrgs);
+  reloadOrgsRef.current = reloadOrgs;
   useEffect(() => {
-    reloadOrgs();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    reloadOrgsRef.current();
+  }, []); // intentional: fetch once on mount only
 
   const toggleSave = (id) => {
     setSavedIds((prev) => {

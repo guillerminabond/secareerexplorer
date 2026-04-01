@@ -36,6 +36,10 @@
         {
           "key": "Content-Security-Policy",
           "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co https://api.emailjs.com; frame-ancestors 'none';"
+        },
+        {
+          "key": "X-CSP-Notes",
+          "value": "unsafe-inline required: Vite injects inline scripts; Layout.jsx uses an inline style block for scrollbar-hide and admin-modal-content utilities. unsafe-eval required by Vite/Rollup chunking. TODO: add nonces via Vite HTML plugin and remove unsafe-inline once inline styles are eliminated."
         }
       ]
     }

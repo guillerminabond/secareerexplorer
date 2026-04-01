@@ -409,19 +409,28 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
   // ── Dynamic option counts (data-driven disable logic) ─────────────────────
   // Counts how many orgs match each option given the other filter answers.
   // Computed unconditionally (hooks can't be inside conditionals).
+  // Stable serialisation of quizOptions avoids referential instability of the
+  // array prop without suppressing the lint rule.
+  const quizOptionsKey = quizOptions.join(",");
   const optionCounts = useMemo(() => {
     if (!quizKey || !quizOptions.length) return {};
     return computeOptionCounts(orgs, answers, quizKey, quizOptions);
-  }, [orgs, answers, quizKey, quizOptions.join(",")]); // eslint-disable-line
+    // quizOptionsKey is a stable string representation of quizOptions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgs, answers, quizKey, quizOptionsKey]);
 
   // Sort options by hierarchical relevance (cause → population/orgtype)
   const selectedCauses = answers["cause_areas"] || [];
+  const selectedCausesKey = selectedCauses.join(",");
   const sortedOptions = useMemo(() => {
     if (!quizKey) return quizOptions;
     if (quizKey === "target_populations") return sortByRelevance(quizOptions, CAUSE_POPULATION_MAP, selectedCauses);
     if (quizKey === "org_type")           return sortByRelevance(quizOptions, CAUSE_ORGTYPE_MAP,    selectedCauses);
     return quizOptions;
-  }, [quizKey, quizOptions.join(","), selectedCauses.join(",")]); // eslint-disable-line
+    // quizOptionsKey and selectedCausesKey are stable string representations of the
+    // corresponding arrays, preventing referential instability without suppressing the rule.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizKey, quizOptionsKey, selectedCausesKey]);
 
   // ── Quiz handlers ─────────────────────────────────────────────────────────
   const surpriseMe = () => {

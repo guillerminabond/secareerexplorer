@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   CheckCircle, XCircle, Clock, ChevronDown, ChevronUp,
   Search, X, ExternalLink, AlertCircle
@@ -37,7 +37,16 @@ export default function NominationsTab({ nominations: initialNoms, onReload, onA
   const [rejecting, setRejecting] = useState(null); // id being rejected (shows note input)
   const [working, setWorking]     = useState(null);
 
-  React.useEffect(() => { setItems(initialNoms); }, [initialNoms]);
+  // Use a JSON-serialised ref to detect real content changes rather than
+  // reacting to a new array reference on every parent render.
+  const initialNomsJsonRef = useRef(null);
+  useEffect(() => {
+    const json = JSON.stringify(initialNoms);
+    if (json !== initialNomsJsonRef.current) {
+      initialNomsJsonRef.current = json;
+      setItems(initialNoms);
+    }
+  }, [initialNoms]);
 
   // ── Counts ────────────────────────────────────────────────────
   const counts = useMemo(() => ({

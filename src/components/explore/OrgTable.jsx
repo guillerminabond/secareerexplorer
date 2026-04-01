@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2, Users, Award, Lightbulb } from "lucide-react";
+import { sanitizeUrl } from "@/lib/security";
 
 // ── Inline badge chips for table rows ────────────────────────
 function RowBadges({ org }) {
@@ -139,9 +140,9 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
 
               {/* External link */}
               <td className="px-3 sm:px-4 py-3">
-                {org.website && (
+                {sanitizeUrl(org.website) && (
                   <a
-                    href={org.website}
+                    href={sanitizeUrl(org.website)}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={e => e.stopPropagation()}

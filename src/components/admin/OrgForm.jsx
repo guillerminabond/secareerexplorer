@@ -94,6 +94,24 @@ export default function OrgForm({ org, onSave, onCancel }) {
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
 
   const handleSave = async () => {
+    // ── Client-side validation ────────────────────────────────
+    if (!form.name || !form.name.trim()) {
+      setError("Organization name is required.");
+      return;
+    }
+    if (form.year_established) {
+      const year = Number(form.year_established);
+      if (
+        !Number.isInteger(year) ||
+        String(form.year_established).trim().length !== 4 ||
+        year < 1000 ||
+        year > new Date().getFullYear()
+      ) {
+        setError("Year Established must be a valid 4-digit year (e.g. 2001).");
+        return;
+      }
+    }
+
     setSaving(true);
     setError(null);
     try {

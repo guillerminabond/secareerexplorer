@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient'
 import { validateText, isValidEmail, checkRateLimit, LIMITS } from '@/lib/security'
+import { FEEDBACK_TYPES } from '@/lib/feedbackTypes'
 
 /**
  * Save feedback to Supabase and optionally send an email via EmailJS REST API.
@@ -23,9 +24,9 @@ export async function submitFeedback({ name, email, type, message }) {
     throw new Error('Please enter a valid email address.')
   }
 
-  // Whitelist allowed feedback types to prevent injection via the type field
-  const ALLOWED_TYPES = ['General', 'Bug', 'Feature Request', 'Missing Org', 'Other']
-  const safeType = ALLOWED_TYPES.includes(type) ? type : 'General'
+  // Whitelist allowed feedback types to prevent injection via the type field.
+  // FEEDBACK_TYPES is the shared source of truth — see src/lib/feedbackTypes.js.
+  const safeType = FEEDBACK_TYPES.includes(type) ? type : 'General'
 
   // ── 1. Save to Supabase ────────────────────────────────────
   const { error } = await supabase.from('site_feedback').insert({

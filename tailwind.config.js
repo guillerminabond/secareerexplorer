@@ -10,6 +10,14 @@ module.exports = {
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			// HBS crimson — used extensively across the app via `text-crimson`, `bg-crimson`, etc.
+  			// Defined here so Tailwind generates all opacity/variant utilities automatically,
+  			// removing the need for the manual CSS overrides in Layout.jsx.
+  			crimson: {
+  				DEFAULT: '#A51C30',
+  				50:  'rgba(165,28,48,0.05)',
+  				100: 'rgba(165,28,48,0.10)',
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

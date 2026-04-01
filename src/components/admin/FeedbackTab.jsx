@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Star, Archive, ArchiveRestore, Trash2, ChevronDown,
   MessageSquare, Send, Loader2, Search, X, AlertTriangle
@@ -27,7 +27,16 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
   const [saveError,    setSaveError]    = useState({});
   const [deleting,     setDeleting]     = useState(null);
 
-  useEffect(() => { setItems(initialFeedback); }, [initialFeedback]);
+  // Use a JSON-serialised ref to detect real content changes rather than
+  // reacting to a new array reference on every parent render.
+  const initialFeedbackJsonRef = useRef(null);
+  useEffect(() => {
+    const json = JSON.stringify(initialFeedback);
+    if (json !== initialFeedbackJsonRef.current) {
+      initialFeedbackJsonRef.current = json;
+      setItems(initialFeedback);
+    }
+  }, [initialFeedback]);
 
   // ── Optimistic patch helper ───────────────────────────────────
   const patch = (id, updates) =>

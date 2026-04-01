@@ -1,5 +1,6 @@
 import React from "react";
 import { X, ExternalLink, Pencil, Users, Award, Lightbulb } from "lucide-react";
+import { sanitizeUrl } from "@/lib/security";
 
 const Section = ({ label, value }) => {
   if (!value) return null;
@@ -113,9 +114,9 @@ export default function OrgModal({ org, onClose, onEdit }) {
               </div>
             )}
 
-            {org.website && (
+            {sanitizeUrl(org.website) && (
               <a
-                href={org.website}
+                href={sanitizeUrl(org.website)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-crimson hover:underline"

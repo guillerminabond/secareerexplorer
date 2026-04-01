@@ -167,17 +167,23 @@ function NominationsQueue({ nominations, onApprove, onReject }) {
 }
 
 // ── Feedback inbox (admin only) ───────────────────────────────
-function FeedbackInbox() {
+function FeedbackInbox({ adminMode }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
 
   useEffect(() => {
+    // Guard: only fetch when admin mode is active to avoid leaking admin data
+    // to non-admin sessions that might somehow mount this component.
+    if (!adminMode) {
+      setLoading(false);
+      return;
+    }
     fetchFeedback()
       .then(setItems)
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [adminMode]);
 
   const typeColor = (t) => {
     if (t === "Bug") return "bg-red-50 text-red-600";
@@ -508,7 +514,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       )}
 
       {/* ── Admin: Feedback inbox ── */}
-      {adminMode && <FeedbackInbox />}
+      {adminMode && <FeedbackInbox adminMode={adminMode} />}
     </div>
   );
 }

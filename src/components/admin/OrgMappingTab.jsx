@@ -303,8 +303,6 @@ export default function OrgMappingTab({ orgs }) {
       {popover && (
         <OrgPopover
           orgs={popover.orgs}
-          v1={popover.v1}
-          v2={popover.v2}
           dim1Val={popover.v1}
           dim2Val={popover.v2}
           dim1Label={dim1Info?.label}

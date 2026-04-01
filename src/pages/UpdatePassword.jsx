@@ -46,9 +46,17 @@ export default function UpdatePassword() {
       setError(updateError.message || "Failed to update password. The link may have expired.");
     } else {
       setDone(true);
-      setTimeout(() => navigate("/admin"), 2500);
     }
   };
+
+  // Redirect to /admin 2.5 s after a successful password update.
+  // The cleanup function clears the timer if the component unmounts early
+  // (e.g. the user navigates away before the redirect fires).
+  useEffect(() => {
+    if (!done) return;
+    const timer = setTimeout(() => navigate("/admin"), 2500);
+    return () => clearTimeout(timer);
+  }, [done, navigate]);
 
   return (
     <div className="bg-gray-50 min-h-screen flex items-center justify-center py-24">

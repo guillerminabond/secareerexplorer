@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ExternalLink, Bookmark, BookmarkCheck, Pencil, Trash2, Users, Award, Lightbulb } from "lucide-react";
+import { sanitizeUrl } from "@/lib/security";
 
 // ── HBS badge chips ───────────────────────────────────────────
 function OrgBadges({ org }) {
@@ -36,6 +37,7 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); onSave(org.id); }}
+          aria-label={saved ? `Unsave ${org.name}` : `Save ${org.name}`}
           className="text-gray-300 hover:text-crimson flex-shrink-0 mt-0.5">
           {saved ? <BookmarkCheck className="w-4 h-4 text-crimson" /> : <Bookmark className="w-4 h-4" />}
         </button>
@@ -101,12 +103,13 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
         )}
         {!(onEdit || onDelete) && <div />}
 
-        {org.website &&
+        {sanitizeUrl(org.website) &&
           <a
-            href={org.website}
+            href={sanitizeUrl(org.website)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
+            aria-label={`Visit ${org.name} website`}
             className="text-gray-400 hover:text-crimson">
             <ExternalLink className="w-3.5 h-3.5" />
           </a>

@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { X, MessageSquare, CheckCircle } from "lucide-react";
 import { submitFeedback } from "@/api/feedbackApi";
-
-const FEEDBACK_TYPES = ["General", "Bug", "Suggestion", "Content"];
+import { FEEDBACK_TYPES } from "@/lib/feedbackTypes";
 
 export default function FeedbackModal({ onClose }) {
   const [form, setForm] = useState({ name: "", email: "", type: "General", message: "" });

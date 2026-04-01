@@ -80,17 +80,50 @@ async function lookupIds(table, names = []) {
 }
 
 // ── Upsert junction table records ────────────────────────────
+//
+// WARNING: This is a non-atomic two-step operation (delete then insert).
+// If the insert fails after a successful delete, the junction rows are lost
+// until the user saves again.  A safer approach is to wrap both statements
+// in a single Supabase RPC transaction.  Refactor to use TanStack Query +
+// an RPC when time allows.
 async function replaceJunction(junctionTable, orgId, fkColumn, ids) {
-  await supabase.from(junctionTable).delete().eq('organization_id', orgId)
+  const { error: deleteError } = await supabase
+    .from(junctionTable)
+    .delete()
+    .eq('organization_id', orgId)
+  if (deleteError) throw deleteError
+
   if (ids.length === 0) return
+
   const rows = ids.map(id => ({ organization_id: orgId, [fkColumn]: id }))
-  const { error } = await supabase.from(junctionTable).insert(rows)
-  if (error) throw error
+  const { error: insertError } = await supabase.from(junctionTable).insert(rows)
+  if (insertError) {
+    // Delete already ran — junction rows are gone.  Log loudly so the caller
+    // can surface the error and prompt the user to save again.
+    console.error(
+      `[replaceJunction] Insert failed for ${junctionTable} (org ${orgId}) after delete. ` +
+      'Data may be in an inconsistent state. Re-save to recover.',
+      insertError
+    )
+    throw insertError
+  }
 }
 
 // ── In-memory cache ──────────────────────────────────────────
 // Shared across all components for the lifetime of the browser session.
 // Invalidated automatically after every mutation (create / update / delete).
+//
+// ⚠️  KNOWN RISKS — do not expand this pattern; prefer TanStack Query instead:
+//   1. Stale across HMR: Vite hot-module replacement does NOT reset module-level
+//      variables, so during development _orgsCache persists across file saves and
+//      can serve stale data until a full page reload.
+//   2. Breaks tests: unit/integration tests that import this module in the same
+//      process will share cache state across test cases, causing flaky failures.
+//   3. No React Suspense / error-boundary integration.
+//
+// TODO: Replace with TanStack Query's cache (useQuery / QueryClient) when
+//       refactoring.  TanStack handles deduplication, background revalidation,
+//       TTL, and test isolation automatically.
 let _orgsCache  = null   // { data: Org[], ts: number } | null
 let _orgsFlight = null   // in-flight Promise (deduplicate simultaneous callers)
 const ORGS_TTL  = 3 * 60 * 1000  // 3 minutes
