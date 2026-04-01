@@ -142,7 +142,7 @@ export default function OrgModal({ org, onClose, onEdit }) {
                   },
                   {
                     label: "Crunchbase",
-                    url: `https://www.crunchbase.com/search/organizations?q=${encodeURIComponent(org.name)}`,
+                    url: `https://www.crunchbase.com/organization/${org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
                     emoji: "📊",
                   },
                 ].map(({ label, url, emoji }) => (
