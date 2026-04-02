@@ -57,6 +57,7 @@ export default function AllOrgs() {
   });
   const [showFilters, setShowFilters] = useState(() => !!(location.state?.filters && Object.keys(location.state.filters).length > 0));
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [columnFilters, setColumnFilters] = useState({});
   const [viewMode, setViewMode] = useState(() =>
     typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
   );
@@ -111,6 +112,7 @@ export default function AllOrgs() {
     )
       return false;
 
+    // FilterBar filters
     for (const [key, values] of Object.entries(filters)) {
       if (!values?.length) continue;
       if (key === "org_type") {
@@ -134,6 +136,21 @@ export default function AllOrgs() {
         if (!values.some((v) => orgVals.includes(v))) return false;
       }
     }
+
+    // Column-level inline filters (additive AND with FilterBar)
+    for (const [colKey, values] of Object.entries(columnFilters)) {
+      if (!values?.length) continue;
+      const orgVals = getValuesAsArray(org[colKey]);
+      if (orgVals.length) {
+        // Tag / multi-value column: OR within the column
+        if (!values.some((v) => orgVals.includes(v))) return false;
+      } else {
+        // Scalar column (org_type, industry, hq, employees)
+        const scalar = String(org[colKey] || "");
+        if (!values.includes(scalar)) return false;
+      }
+    }
+
     return true;
   });
 
@@ -253,11 +270,14 @@ export default function AllOrgs() {
           {viewMode === "table" ? (
             <OrgTable
               orgs={filtered}
+              allOrgs={orgs}
               savedIds={savedIds}
               onSave={toggleSave}
               onRowClick={setSelectedOrg}
               onEdit={adminMode ? (org) => setEditingOrg(org) : undefined}
               onDelete={adminMode ? handleDelete : undefined}
+              columnFilters={columnFilters}
+              onColumnFiltersChange={setColumnFilters}
             />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
