@@ -67,25 +67,36 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
   const hasAdminCols = onEdit || onDelete;
 
   return (
-    // overflow-x-auto gives mobile a horizontal scroll fallback if needed;
-    // responsive column hiding handles the common case without scrolling.
+    // Horizontal scroll within the table container so all columns are always visible
     <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
-      <table className="w-full text-sm min-w-[320px]">
+      <table className="w-full text-sm min-w-[900px]">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             {/* Save — always visible */}
-            <th className="text-left px-3 sm:px-4 py-3 w-8"></th>
+            <th className="text-left px-3 py-3 w-8"></th>
             {/* Organization — always visible */}
-            <th className="text-left px-3 sm:px-4 py-3">Organization</th>
-            {/* Type — hidden on xs, visible sm+ */}
-            <th className="text-left px-3 sm:px-4 py-3 hidden sm:table-cell">Type</th>
-            {/* Cause Areas — hidden on xs/sm, visible md+ */}
-            <th className="text-left px-3 sm:px-4 py-3 hidden md:table-cell">Cause Areas</th>
-            {/* Regions — hidden on xs/sm/md, visible lg+ */}
-            <th className="text-left px-3 sm:px-4 py-3 hidden lg:table-cell">Regions</th>
-            {/* External link — always visible */}
-            <th className="text-left px-3 sm:px-4 py-3 w-8"></th>
-            {hasAdminCols && <th className="text-left px-3 sm:px-4 py-3 w-20"></th>}
+            <th className="text-left px-3 py-3">Organization</th>
+            {/* Type */}
+            <th className="text-left px-3 py-3">Type</th>
+            {/* Industry */}
+            <th className="text-left px-3 py-3">Industry</th>
+            {/* Cause Areas */}
+            <th className="text-left px-3 py-3">Cause Areas</th>
+            {/* Regions */}
+            <th className="text-left px-3 py-3">Regions</th>
+            {/* Ecosystem Role */}
+            <th className="text-left px-3 py-3">Role</th>
+            {/* Target Populations */}
+            <th className="text-left px-3 py-3">Populations</th>
+            {/* HQ */}
+            <th className="text-left px-3 py-3">HQ</th>
+            {/* Employees */}
+            <th className="text-left px-3 py-3">Employees</th>
+            {/* Year */}
+            <th className="text-left px-3 py-3">Est.</th>
+            {/* External link */}
+            <th className="text-left px-3 py-3 w-8"></th>
+            {hasAdminCols && <th className="text-left px-3 py-3 w-20"></th>}
           </tr>
         </thead>
         <tbody>
@@ -96,7 +107,7 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
               className={`border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${i % 2 === 0 ? "" : "bg-gray-50/30"}`}
             >
               {/* Save / bookmark */}
-              <td className="px-3 sm:px-4 py-3">
+              <td className="px-3 py-3">
                 <button
                   onClick={e => { e.stopPropagation(); onSave(org.id); }}
                   className="p-1.5 -m-1.5 text-gray-300 hover:text-crimson rounded"
@@ -108,38 +119,66 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
                 </button>
               </td>
 
-              {/* Organization name + description */}
-              <td className="px-3 sm:px-4 py-3">
+              {/* Organization name + description + badges */}
+              <td className="px-3 py-3 min-w-[180px]">
                 <p className="font-semibold text-gray-900 leading-tight">{org.name}</p>
                 {org.description && (
-                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs hidden sm:block">{org.description}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 line-clamp-1 max-w-xs">{org.description}</p>
                 )}
                 <RowBadges org={org} />
-                {/* Show type inline on mobile since the Type column is hidden */}
-                {org.org_type && (
-                  <span className="mt-1 inline-block sm:hidden px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{org.org_type}</span>
-                )}
               </td>
 
-              {/* Type — sm+ */}
-              <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
+              {/* Type */}
+              <td className="px-3 py-3 whitespace-nowrap">
                 {org.org_type && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{org.org_type}</span>
                 )}
               </td>
 
-              {/* Cause Areas — md+ */}
-              <td className="px-3 sm:px-4 py-3 max-w-xs hidden md:table-cell">
+              {/* Industry */}
+              <td className="px-3 py-3 whitespace-nowrap">
+                {org.industry && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">{org.industry}</span>
+                )}
+              </td>
+
+              {/* Cause Areas */}
+              <td className="px-3 py-3 max-w-[200px]">
                 <TagList items={org.cause_areas} colorClass="bg-crimson/10 text-crimson" />
               </td>
 
-              {/* Regions — lg+ */}
-              <td className="px-3 sm:px-4 py-3 max-w-xs hidden lg:table-cell">
+              {/* Regions */}
+              <td className="px-3 py-3 max-w-[180px]">
                 <TagList items={org.regions} colorClass="bg-blue-50 text-blue-600" />
               </td>
 
+              {/* Role */}
+              <td className="px-3 py-3 max-w-[160px]">
+                <TagList items={org.role_types} colorClass="bg-purple-50 text-purple-600" />
+              </td>
+
+              {/* Target Populations */}
+              <td className="px-3 py-3 max-w-[180px]">
+                <TagList items={org.target_populations} colorClass="bg-amber-50 text-amber-700" />
+              </td>
+
+              {/* HQ */}
+              <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                {org.hq || ""}
+              </td>
+
+              {/* Employees */}
+              <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                {org.employees || ""}
+              </td>
+
+              {/* Year Established */}
+              <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                {org.year_established || ""}
+              </td>
+
               {/* External link */}
-              <td className="px-3 sm:px-4 py-3">
+              <td className="px-3 py-3">
                 {sanitizeUrl(org.website) && (
                   <a
                     href={sanitizeUrl(org.website)}
@@ -156,7 +195,7 @@ export default function OrgTable({ orgs, savedIds, onSave, onRowClick, onEdit, o
 
               {/* Admin actions */}
               {hasAdminCols && (
-                <td className="px-3 sm:px-4 py-3" onClick={e => e.stopPropagation()}>
+                <td className="px-3 py-3" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center gap-0.5">
                     {onEdit && (
                       <button

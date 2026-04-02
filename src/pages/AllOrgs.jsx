@@ -122,6 +122,9 @@ export default function AllOrgs() {
               (v === "Impact Investing" || v === "Foundation"))
         );
         if (!match) return false;
+      } else if (key === "industry") {
+        const orgVal = org.industry || "";
+        if (!values.includes(orgVal)) return false;
       } else if (key === "regions") {
         const expanded = expandRegions(values);
         const orgVals = getValuesAsArray(org[key]);
@@ -140,7 +143,7 @@ export default function AllOrgs() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6">
+    <div className="max-w-screen-2xl mx-auto px-6 py-6">
       <div className="flex gap-3 mb-4 flex-wrap">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

@@ -28,7 +28,7 @@ export default function MainNav() {
   return (
     <>
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex items-center">
+        <div className="max-w-screen-2xl mx-auto flex items-center">
 
           {/* Scrollable tab strip */}
           <div className="flex gap-1 items-center overflow-x-auto scrollbar-hide px-4 sm:px-6 flex-1 min-w-0">

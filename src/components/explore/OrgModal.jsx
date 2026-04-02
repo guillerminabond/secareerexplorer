@@ -59,6 +59,9 @@ export default function OrgModal({ org, onClose, onEdit }) {
             <div className="flex-1 min-w-0 mr-4">
               <h2 className="text-xl font-bold text-gray-900">{org.name}</h2>
               <p className="text-sm text-gray-500">{org.org_type}</p>
+              {org.industry && (
+                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">{org.industry}</span>
+              )}
               <OrgBadges org={org} />
               {org.saves > 0 && (
                 <p className="text-xs text-gray-400 mt-1.5">

@@ -33,6 +33,9 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-sm leading-tight">{org.name}</h3>
           <p className="text-xs text-gray-500 mt-0.5">{org.org_type}</p>
+          {org.industry && (
+            <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700">{org.industry}</span>
+          )}
           <OrgBadges org={org} />
         </div>
         <button

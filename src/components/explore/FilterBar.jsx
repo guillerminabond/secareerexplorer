@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
 import { REGION_HIERARCHY, PARENT_REGIONS, getParent } from "@/constants/regions";
+import { INDUSTRIES } from "@/constants/industries";
 
 // Sub-segments keyed by cause area — mirrors CAUSE_DETAILS.subtopics in LearnMore
 const CAUSE_SUBTOPICS = {
@@ -18,6 +19,7 @@ const CAUSE_SUBTOPICS = {
 const NON_REGION_FILTERS = {
   cause_areas:        ["Poverty Alleviation", "Economic Development", "Global Health", "Education", "Climate & Energy", "Gender & Social Justice", "Financial Inclusion", "Housing & Community", "Arts & Culture"],
   org_type:           ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"],
+  industry:           INDUSTRIES,
   role_types:         ["Operator", "Funder", "Enabler", "Advocacy & Policy"],
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
 };
@@ -25,6 +27,7 @@ const NON_REGION_FILTERS = {
 const LABEL_MAP = {
   cause_areas:        "Cause Areas",
   org_type:           "Org Type",
+  industry:           "Industry",
   role_types:         "Ecosystem Role",
   target_populations: "Target Populations",
 };

@@ -577,7 +577,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Content ────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-screen-2xl mx-auto px-6 py-6">
 
         {/* Explore */}
         {tab === "Explore" &&

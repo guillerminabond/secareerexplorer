@@ -32,7 +32,7 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-6 py-6">
+      <div className="max-w-screen-2xl mx-auto px-6 py-6">
         {loading ? (
           /* Skeleton cards — matches the grid layout used in QuizExplore results */
           <div className="max-w-2xl mx-auto py-8 space-y-4">

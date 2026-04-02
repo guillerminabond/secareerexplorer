@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createOrg, updateOrg, fetchLookups } from "@/api/organizationsApi";
 import { REGION_HIERARCHY } from "@/constants/regions";
+import { INDUSTRIES } from "@/constants/industries";
 
 const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30";
 
@@ -75,7 +76,7 @@ const OPERATOR_ORG_TYPES = new Set([
 
 export default function OrgForm({ org, onSave, onCancel }) {
   const [form, setForm] = useState(org || {
-    name: "", description: "", website: "", org_type: "",
+    name: "", description: "", website: "", org_type: "", industry: "",
     cause_areas: [], role_types: [], regions: [], target_populations: [],
     cause_subtopics: [],
     hbs_note: "", notable_alumni: "", size: "",
@@ -165,6 +166,13 @@ export default function OrgForm({ org, onSave, onCancel }) {
           <input className={inputClass} value={form.size} onChange={e => set("size", e.target.value)} placeholder="e.g. Small, Mid, Large" />
         </Field>
       </div>
+
+      <Field label="Industry">
+        <select className={inputClass} value={form.industry} onChange={e => set("industry", e.target.value)}>
+          <option value="">Select...</option>
+          {INDUSTRIES.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      </Field>
 
       <Field label="Employees">
         <select className={inputClass} value={form.employees} onChange={e => set("employees", e.target.value)}>

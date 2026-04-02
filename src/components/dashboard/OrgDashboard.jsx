@@ -330,11 +330,12 @@ function CauseRegionMatrix({ orgs, onNavigate }) {
 
 // ── Main component ────────────────────────────────────────────
 export default function OrgDashboard({ orgs, adminMode = false, nominations = [], onApprove, onReject, onNavigate }) {
-  const causeData  = useMemo(() => countBy(orgs, "cause_areas"), [orgs]);
-  const typeData   = useMemo(() => countBy(orgs, "org_type"), [orgs]);
-  const regionData = useMemo(() => countBy(orgs, "regions"), [orgs]);
-  const roleData   = useMemo(() => countBy(orgs, "role_types"), [orgs]);
-  const popData    = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
+  const causeData    = useMemo(() => countBy(orgs, "cause_areas"), [orgs]);
+  const typeData     = useMemo(() => countBy(orgs, "org_type"), [orgs]);
+  const industryData = useMemo(() => countBy(orgs, "industry"), [orgs]);
+  const regionData   = useMemo(() => countBy(orgs, "regions"), [orgs]);
+  const roleData     = useMemo(() => countBy(orgs, "role_types"), [orgs]);
+  const popData      = useMemo(() => countBy(orgs, "target_populations"), [orgs]);
 
   const uniqueCauses  = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.cause_areas))).size, [orgs]);
   const uniqueRegions = useMemo(() => new Set(orgs.flatMap(o => splitVals(o.regions))).size, [orgs]);
@@ -405,6 +406,28 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* ── Industry Breakdown ── */}
+      {industryData.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5">
+          <SectionTitle>Industry Breakdown</SectionTitle>
+          {navigate && <p className="text-xs text-gray-400 mb-3">Click a bar to explore organizations in that industry.</p>}
+          <ResponsiveContainer width="100%" height={Math.max(240, industryData.length * 28)}>
+            <BarChart data={industryData} layout="vertical" margin={{ left: 8, right: 24 }}>
+              <XAxis type="number" tick={{ fontSize: 11, fill: "#9ca3af" }} />
+              <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11, fill: "#374151" }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar
+                dataKey="count"
+                fill="#16a085"
+                radius={[0, 4, 4, 0]}
+                style={navigate ? { cursor: "pointer" } : {}}
+                onClick={navigate ? (data) => navigate({ industry: [data.name] }) : undefined}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* ── Org Type + Role ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

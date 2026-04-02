@@ -17,7 +17,7 @@ export default function AllOrgsLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 flex gap-2 overflow-x-auto scrollbar-hide">
+        <div className="max-w-screen-2xl mx-auto px-6 flex gap-2 overflow-x-auto scrollbar-hide">
           <NavLink to="/all-orgs/database"  end className={tabClass}>Database</NavLink>
           <NavLink to="/all-orgs/dashboard" end className={tabClass}>Dashboard</NavLink>
         </div>
