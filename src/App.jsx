@@ -15,6 +15,7 @@ import Admin from "./pages/Admin";
 import HowToUse from "./pages/HowToUse";
 import UpdatePassword from "./pages/UpdatePassword";
 import ForgotPassword from "./pages/ForgotPassword";
+import { Analytics } from '@vercel/analytics/react';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -119,6 +120,7 @@ function App() {
         </Routes>
       </Router>
       <Toaster />
+      <Analytics />
     </QueryClientProvider>
     </AdminProvider>
   );
