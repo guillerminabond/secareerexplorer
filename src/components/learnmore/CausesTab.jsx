@@ -37,7 +37,7 @@ const CAUSE_DETAILS = {
     read_more: [
       { category: "Problem Overview", source: "World Bank", url: "https://www.worldbank.org/en/topic/poverty" },
       { category: "Research & Evidence", source: "GiveWell", url: "https://www.givewell.org/" },
-      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/library/philanthropy/big-bets-philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/big-bet-philanthropy" },
       { category: "Key Organization", source: "Acumen", url: "https://acumen.org/" },
     ],
   },
@@ -63,7 +63,7 @@ const CAUSE_DETAILS = {
       { category: "Problem Overview", source: "World Bank – Economic Growth", url: "https://www.worldbank.org/en/topic/economic-growth" },
       { category: "Key Organization", source: "IFC (Int'l Finance Corporation)", url: "https://www.ifc.org/" },
       { category: "Research", source: "Brookings – Economic Development", url: "https://www.brookings.edu/topic/economic-development/" },
-      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights" },
     ],
   },
 
@@ -87,9 +87,9 @@ const CAUSE_DETAILS = {
     read_more: [
       { category: "Problem Overview", source: "World Health Organization (WHO)", url: "https://www.who.int/health-topics" },
       { category: "Key Organization", source: "Partners in Health", url: "https://www.pih.org/" },
-      { category: "Funding Landscape", source: "Gates Foundation – Global Health", url: "https://www.gatesfoundation.org/our-work/programs/global-health" },
-      { category: "Research", source: "Bridgespan – Global Health Funding", url: "https://www.bridgespan.org/insights/library/philanthropy" },
-      { category: "HBS Resource", source: "HBS Health Care Initiative", url: "https://www.hbs.edu/faculty/Units/healthcarepolicy/hci/Pages/default.aspx" },
+      { category: "Funding Landscape", source: "Gates Foundation – Global Health", url: "https://www.gatesfoundation.org/our-work/areas-of-impact/health" },
+      { category: "Research", source: "Bridgespan – Global Health Funding", url: "https://www.bridgespan.org/insights" },
+      { category: "HBS Resource", source: "HBS Health Care Initiative", url: "https://www.hbs.edu/healthcare/initiative/" },
     ],
   },
 
@@ -113,7 +113,7 @@ const CAUSE_DETAILS = {
     read_more: [
       { category: "Problem Overview", source: "UNESCO – Education", url: "https://www.unesco.org/en/education" },
       { category: "Key Organization", source: "NewSchools Venture Fund", url: "https://www.newschools.org/" },
-      { category: "Funding Landscape", source: "Bridgespan – Education Funding", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan – Education Funding", url: "https://www.bridgespan.org/insights" },
       { category: "Research", source: "EdSurge", url: "https://www.edsurge.com/" },
     ],
   },
@@ -140,7 +140,7 @@ const CAUSE_DETAILS = {
       { category: "Problem Overview", source: "Project Drawdown", url: "https://drawdown.org/" },
       { category: "Research", source: "IRENA – Renewable Energy", url: "https://www.irena.org/" },
       { category: "Key Organization", source: "RMI (Rocky Mountain Institute)", url: "https://rmi.org/" },
-      { category: "Funding Landscape", source: "Bridgespan – Climate Philanthropy", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan – Climate Philanthropy", url: "https://www.bridgespan.org/insights" },
     ],
   },
 
@@ -164,7 +164,7 @@ const CAUSE_DETAILS = {
     read_more: [
       { category: "Problem Overview", source: "UN Women", url: "https://www.unwomen.org/en" },
       { category: "Research", source: "Catalyst – Workplace Equity", url: "https://www.catalyst.org/" },
-      { category: "Funding Landscape", source: "Bridgespan – Racial Equity Funding", url: "https://www.bridgespan.org/insights/library/organizational-effectiveness/racial-equity" },
+      { category: "Funding Landscape", source: "Bridgespan – Racial Equity Funding", url: "https://www.bridgespan.org/insights/racial-equity-in-philanthropy" },
       { category: "Key Organization", source: "Open Society Foundations", url: "https://www.opensocietyfoundations.org/" },
     ],
   },
@@ -190,7 +190,7 @@ const CAUSE_DETAILS = {
       { category: "Problem Overview", source: "CGAP – Financial Inclusion", url: "https://www.cgap.org/" },
       { category: "Research", source: "World Bank – Financial Inclusion", url: "https://www.worldbank.org/en/topic/financialinclusion" },
       { category: "Key Organization", source: "Accion", url: "https://www.accion.org/" },
-      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights" },
     ],
   },
 
@@ -215,7 +215,7 @@ const CAUSE_DETAILS = {
       { category: "Problem Overview", source: "Urban Institute", url: "https://www.urban.org/" },
       { category: "Key Organization", source: "LISC", url: "https://www.lisc.org/" },
       { category: "Key Organization", source: "Enterprise Community Partners", url: "https://www.enterprisecommunity.org/" },
-      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights" },
     ],
   },
 
@@ -240,7 +240,7 @@ const CAUSE_DETAILS = {
       { category: "Problem Overview", source: "Americans for the Arts", url: "https://www.americansforthearts.org/" },
       { category: "Key Organization", source: "National Endowment for the Arts", url: "https://www.arts.gov/" },
       { category: "Key Organization", source: "Creative Capital", url: "https://creative-capital.org/" },
-      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights/library/philanthropy" },
+      { category: "Funding Landscape", source: "Bridgespan Group", url: "https://www.bridgespan.org/insights" },
     ],
   },
 };
