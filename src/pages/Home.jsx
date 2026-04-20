@@ -337,8 +337,20 @@ export default function Home() {
 
   useEffect(() => {
     loadOrgs();
-    fetchContent("general_resources").then(data => { if (data) setGeneralResources(data); }).catch(() => {});
-    fetchContent("hbs_resources").then(data => { if (data) setHbsResources(data); }).catch(() => {});
+    fetchContent("general_resources").then(data => {
+      if (data) {
+        const existingUrls = new Set(data.map(r => r.url));
+        const newItems = DEFAULT_GENERAL_RESOURCES.filter(r => !existingUrls.has(r.url));
+        setGeneralResources(newItems.length > 0 ? [...data, ...newItems] : data);
+      }
+    }).catch(() => {});
+    fetchContent("hbs_resources").then(data => {
+      if (data) {
+        const existingUrls = new Set(data.map(r => r.url));
+        const newItems = DEFAULT_HBS_RESOURCES.filter(r => !existingUrls.has(r.url));
+        setHbsResources(newItems.length > 0 ? [...data, ...newItems] : data);
+      }
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -984,6 +996,11 @@ export default function Home() {
       )}
       {showNominate && <NominateModal onClose={() => setShowNominate(false)} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+
+      {/* Disclaimer */}
+      <p className="text-center text-xs text-gray-400 mt-10 mb-4 px-4">
+        This is a student-created resource. Organization data was collected in March 2026 and may not reflect the most current information. Please verify details directly with each organization.
+      </p>
     </div>
   );
 }

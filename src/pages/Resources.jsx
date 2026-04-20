@@ -574,7 +574,13 @@ export default function Resources() {
         setGeneralResources(newItems.length > 0 ? [...data, ...newItems] : data);
       }
     }).catch(() => {});
-    fetchContent("hbs_resources").then(data => { if (data) setHbsResources(data); }).catch(() => {});
+    fetchContent("hbs_resources").then(data => {
+      if (data) {
+        const existingUrls = new Set(data.map(r => r.url));
+        const newItems = DEFAULT_HBS_RESOURCES.filter(r => !existingUrls.has(r.url));
+        setHbsResources(newItems.length > 0 ? [...data, ...newItems] : data);
+      }
+    }).catch(() => {});
   }, []);
 
   const toggleResourceTag = tag => {
