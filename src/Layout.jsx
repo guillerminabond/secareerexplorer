@@ -25,6 +25,11 @@ export default function Layout({ children }) {
 
       <MainNav />
       {children}
+
+      {/* Disclaimer */}
+      <p className="text-center text-xs text-gray-400 mt-10 mb-4 px-4">
+        This is a student-created resource. Organization data was collected in March 2026 and may not reflect the most current information. Please verify details directly with each organization.
+      </p>
     </div>
   );
 }

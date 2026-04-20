@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Star, Plus, Pencil, Trash2, X, SlidersHorizontal, ExternalLink, ArrowUpDown } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { fetchContent, upsertContent } from "@/api/contentApi";
+import { fetchResources, insertResource, updateResource, deleteResource, toggleResourceFeatured } from "@/api/resourcesApi";
 import { useAdmin } from "@/contexts/AdminContext";
 import { PARENT_REGIONS } from "@/constants/regions";
 
@@ -544,8 +545,9 @@ function SortControl({ value, onChange, filtersActive }) {
 export default function Resources() {
   const { adminMode } = useAdmin();
   const location = useLocation();
-  const [generalResources, setGeneralResources] = useState([...DEFAULT_GENERAL_RESOURCES]);
-  const [hbsResources, setHbsResources] = useState([...DEFAULT_HBS_RESOURCES]);
+  const [generalResources, setGeneralResources] = useState([]);
+  const [hbsResources, setHbsResources] = useState([]);
+  const [loadingResources, setLoadingResources] = useState(true);
   const [editingResource, setEditingResource] = useState(null);
   const [savingResource, setSavingResource] = useState(false);
   const [resourceTagFilters, setResourceTagFilters] = useState([]);
@@ -566,24 +568,26 @@ export default function Resources() {
   }, []); // eslint-disable-line
 
   useEffect(() => {
-    // Merge helper: code defaults are the source of truth for title/desc/tags.
-    // Supabase may contain admin-added extras — keep those too.
-    const mergeResources = (stored, defaults) => {
-      const defaultsByUrl = new Map(defaults.map(r => [r.url, r]));
-      // Update stored items that match a default, keep admin-only items as-is
-      const merged = stored.map(r => defaultsByUrl.has(r.url) ? { ...r, ...defaultsByUrl.get(r.url) } : r);
-      // Append any new defaults not yet in stored data
-      const storedUrls = new Set(stored.map(r => r.url));
-      const newItems = defaults.filter(r => !storedUrls.has(r.url));
-      return [...merged, ...newItems];
+    const loadResources = async () => {
+      setLoadingResources(true);
+      try {
+        const [general, hbs] = await Promise.all([
+          fetchResources('general'),
+          fetchResources('hbs'),
+        ]);
+        if (general) setGeneralResources(general);
+        else setGeneralResources([...DEFAULT_GENERAL_RESOURCES]); // fallback
+        if (hbs) setHbsResources(hbs);
+        else setHbsResources([...DEFAULT_HBS_RESOURCES]); // fallback
+      } catch (err) {
+        console.error('Failed to load resources:', err);
+        setGeneralResources([...DEFAULT_GENERAL_RESOURCES]);
+        setHbsResources([...DEFAULT_HBS_RESOURCES]);
+      } finally {
+        setLoadingResources(false);
+      }
     };
-
-    fetchContent("general_resources").then(data => {
-      if (data) setGeneralResources(mergeResources(data, DEFAULT_GENERAL_RESOURCES));
-    }).catch(() => {});
-    fetchContent("hbs_resources").then(data => {
-      if (data) setHbsResources(mergeResources(data, DEFAULT_HBS_RESOURCES));
-    }).catch(() => {});
+    loadResources();
   }, []);
 
   const toggleResourceTag = tag => {
@@ -613,9 +617,11 @@ export default function Resources() {
   const toggleFeatured = async (section, index) => {
     const isGeneral = section === "general";
     const current = isGeneral ? [...generalResources] : [...hbsResources];
-    current[index] = { ...current[index], featured: !current[index].featured };
+    const resource = current[index];
+    const newFeatured = !resource.featured;
+    current[index] = { ...resource, featured: newFeatured };
     try {
-      await upsertContent(isGeneral ? "general_resources" : "hbs_resources", current);
+      if (resource.id) await toggleResourceFeatured(resource.id, newFeatured);
       if (isGeneral) setGeneralResources(current); else setHbsResources(current);
     } catch (err) { console.error("Failed to toggle featured:", err); }
   };
@@ -639,8 +645,17 @@ export default function Resources() {
       } else {
         cleaned = { title: formData.title, url: formData.url, desc: formData.desc || "", tags: formData.tags || [], featured: formData.featured || false };
       }
-      if (index === null) { current.push(cleaned); } else { current[index] = cleaned; }
-      await upsertContent(isGeneral ? "general_resources" : "hbs_resources", current);
+      if (index === null) {
+        // New resource — insert into Supabase
+        const inserted = await insertResource(section, cleaned);
+        cleaned.id = inserted.id;
+        current.push(cleaned);
+      } else {
+        // Update existing resource
+        cleaned.id = current[index].id;
+        if (cleaned.id) await updateResource(cleaned.id, cleaned);
+        current[index] = cleaned;
+      }
       if (isGeneral) setGeneralResources(current); else setHbsResources(current);
       setEditingResource(null);
     } catch (err) { console.error("Failed to save resource:", err); }
@@ -650,9 +665,10 @@ export default function Resources() {
   const handleDeleteResource = async (section, index) => {
     const isGeneral = section === "general";
     const current = isGeneral ? [...generalResources] : [...hbsResources];
+    const resource = current[index];
     current.splice(index, 1);
     try {
-      await upsertContent(isGeneral ? "general_resources" : "hbs_resources", current);
+      if (resource.id) await deleteResource(resource.id);
       if (isGeneral) setGeneralResources(current); else setHbsResources(current);
     } catch (err) { console.error("Failed to delete resource:", err); }
   };
@@ -924,11 +940,6 @@ export default function Resources() {
           saving={savingResource}
         />
       )}
-
-      {/* Disclaimer */}
-      <p className="text-center text-xs text-gray-400 mt-10 mb-4 px-4">
-        This is a student-created resource. Organization data was collected in March 2026 and may not reflect the most current information. Please verify details directly with each organization.
-      </p>
     </div>
   );
 }
