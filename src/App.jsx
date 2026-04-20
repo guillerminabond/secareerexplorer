@@ -16,7 +16,6 @@ import Admin from "./pages/Admin";
 import HowToUse from "./pages/HowToUse";
 import UpdatePassword from "./pages/UpdatePassword";
 import ForgotPassword from "./pages/ForgotPassword";
-import { Analytics } from '@vercel/analytics/react';
 import AuthConfirm from "./pages/AuthConfirm";
 
 const { Pages, Layout, mainPage } = pagesConfig;
