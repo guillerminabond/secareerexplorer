@@ -6,12 +6,14 @@ import { Lock, Loader2, CheckCircle } from "lucide-react";
 /**
  * UpdatePassword — handles the Supabase password recovery flow.
  *
- * Supabase redirects password recovery emails to:
- *   <site-url>/#access_token=...&type=recovery
+ * Supabase JS v2 uses PKCE by default for email-based auth flows.
+ * The password-reset (or invite) email links redirect here with a
+ * `?code=...` query parameter. We must exchange that code for a
+ * session via `supabase.auth.exchangeCodeForSession(code)`, which
+ * then fires the PASSWORD_RECOVERY auth-state-change event.
  *
- * The Supabase JS client automatically detects this hash and fires
- * an onAuthStateChange event with event = 'PASSWORD_RECOVERY', which
- * gives us a session we can use to call supabase.auth.updateUser().
+ * Legacy hash-based tokens (#access_token=...&type=recovery) are
+ * also handled — the Supabase client picks those up automatically.
  */
 export default function UpdatePassword() {
   const navigate = useNavigate();
@@ -22,15 +24,22 @@ export default function UpdatePassword() {
   const [loading,  setLoading]  = useState(false);
   const [done,     setDone]     = useState(false);
 
-  // Wait for Supabase to exchange the recovery token from the URL hash
+  // 1. Listen for auth events after code exchange.
+  //    PASSWORD_RECOVERY → user clicked a password-reset link
+  //    SIGNED_IN         → user clicked an invite / email-confirmation link
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event) => {
-        if (event === "PASSWORD_RECOVERY") setReady(true);
+        if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+          setReady(true);
+        }
       }
     );
     return () => subscription.unsubscribe();
   }, []);
+
+  // Note: PKCE code exchange is handled centrally by AdminContext.
+  // After exchange, the onAuthStateChange listener above fires PASSWORD_RECOVERY or SIGNED_IN.
 
   const handleSubmit = async () => {
     setError("");

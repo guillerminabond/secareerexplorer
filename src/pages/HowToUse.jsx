@@ -119,7 +119,7 @@ const SECTIONS = [
       },
       {
         heading: "HBS-specific resources",
-        body: "Links to HBS clubs, the Summer Fellows and Leadership Fellows programs, CPD, 12Twenty mentorships, alumni directory, and SE faculty research.",
+        body: "Links to HBS clubs, the Summer Fellows and Leadership Fellows programs, CPD, 12twenty Networking, alumni directory, and SE faculty research.",
       },
       {
         heading: "Tag filtering",

@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
@@ -16,6 +17,7 @@ import HowToUse from "./pages/HowToUse";
 import UpdatePassword from "./pages/UpdatePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import { Analytics } from '@vercel/analytics/react';
+import AuthConfirm from "./pages/AuthConfirm";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -112,7 +114,8 @@ function App() {
             }
           />
 
-          {/* ── Password recovery ─────────────────────────────── */}
+          {/* ── Auth flows ──────────────────────────────────────── */}
+          <Route path="/auth/confirm"     element={<AuthConfirm />} />
           <Route path="/update-password"  element={<UpdatePassword />} />
           <Route path="/forgot-password"  element={<ForgotPassword />} />
 

@@ -27,12 +27,29 @@ export function AdminProvider({ children }) {
   const [session,     setSession]     = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Restore session from Supabase on mount, and subscribe to auth changes
+  // Restore session from Supabase on mount, and subscribe to auth changes.
+  // Also handle PKCE code exchange: Supabase v2 email links (password reset,
+  // invite confirmation) redirect with a `?code=...` query param that must be
+  // exchanged for a session before anything else.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const init = async () => {
+      // Exchange PKCE code if present (must happen before getSession)
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+        // Clean the code from the URL so a refresh doesn't re-attempt
+        const url = new URL(window.location.href);
+        url.searchParams.delete("code");
+        window.history.replaceState({}, "", url.pathname + url.search);
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setAuthLoading(false);
-    });
+    };
+
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
