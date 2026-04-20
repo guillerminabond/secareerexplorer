@@ -566,20 +566,23 @@ export default function Resources() {
   }, []); // eslint-disable-line
 
   useEffect(() => {
+    // Merge helper: code defaults are the source of truth for title/desc/tags.
+    // Supabase may contain admin-added extras — keep those too.
+    const mergeResources = (stored, defaults) => {
+      const defaultsByUrl = new Map(defaults.map(r => [r.url, r]));
+      // Update stored items that match a default, keep admin-only items as-is
+      const merged = stored.map(r => defaultsByUrl.has(r.url) ? { ...r, ...defaultsByUrl.get(r.url) } : r);
+      // Append any new defaults not yet in stored data
+      const storedUrls = new Set(stored.map(r => r.url));
+      const newItems = defaults.filter(r => !storedUrls.has(r.url));
+      return [...merged, ...newItems];
+    };
+
     fetchContent("general_resources").then(data => {
-      if (data) {
-        // Merge: keep stored resources, append any new defaults not yet saved (matched by URL)
-        const existingUrls = new Set(data.map(r => r.url));
-        const newItems = DEFAULT_GENERAL_RESOURCES.filter(r => !existingUrls.has(r.url));
-        setGeneralResources(newItems.length > 0 ? [...data, ...newItems] : data);
-      }
+      if (data) setGeneralResources(mergeResources(data, DEFAULT_GENERAL_RESOURCES));
     }).catch(() => {});
     fetchContent("hbs_resources").then(data => {
-      if (data) {
-        const existingUrls = new Set(data.map(r => r.url));
-        const newItems = DEFAULT_HBS_RESOURCES.filter(r => !existingUrls.has(r.url));
-        setHbsResources(newItems.length > 0 ? [...data, ...newItems] : data);
-      }
+      if (data) setHbsResources(mergeResources(data, DEFAULT_HBS_RESOURCES));
     }).catch(() => {});
   }, []);
 
