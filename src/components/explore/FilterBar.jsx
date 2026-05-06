@@ -24,6 +24,9 @@ const NON_REGION_FILTERS = {
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
 };
 
+const AUM_FILTER = { aum: ["< $10M", "$10M – $100M", "$100M – $500M", "$500M – $1B", "$1B – $10B", "> $10B"] };
+const INVESTOR_TYPE_FILTER = { investor_type: ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"] };
+
 const LABEL_MAP = {
   cause_areas:        "Cause Areas",
   org_type:           "Org Type",
@@ -150,11 +153,30 @@ export default function FilterBar({ active, onChange }) {
       next.cause_subtopics = remainingSubtopics;
     }
 
+    // Clear conditional investor filters when their org types are deselected
+    if (key === "org_type") {
+      const hasAumType = updated.some(v => v === "Impact Investing" || v === "Foundation");
+      const hasInvestor = updated.includes("Impact Investing");
+      if (!hasAumType) delete next.aum;
+      if (!hasInvestor) delete next.investor_type;
+    }
+
     onChange(next);
   };
 
   const clearAll = () => onChange({});
   const hasFilters = Object.values(active).some(v => v?.length > 0);
+
+  // Conditional investor/foundation filters
+  const orgTypes = active.org_type || [];
+  const showAum = orgTypes.some(v => v === "Impact Investing" || v === "Foundation");
+  const showInvestorType = orgTypes.includes("Impact Investing");
+
+  const ACTIVE_FILTERS = {
+    ...NON_REGION_FILTERS,
+    ...(showAum ? AUM_FILTER : {}),
+    ...(showInvestorType ? INVESTOR_TYPE_FILTER : {}),
+  };
 
   // Build the flat list of sub-segment options for whichever cause areas are active
   const activeCauses = active.cause_areas || [];
@@ -162,8 +184,8 @@ export default function FilterBar({ active, onChange }) {
 
   return (
     <div className="space-y-3">
-      {/* Non-region filters (flat chips) */}
-      {Object.entries(NON_REGION_FILTERS).map(([key, values]) => (
+      {/* Non-region filters (flat chips) + conditional investor filters */}
+      {Object.entries(ACTIVE_FILTERS).map(([key, values]) => (
         <React.Fragment key={key}>
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">

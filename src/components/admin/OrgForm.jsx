@@ -3,6 +3,9 @@ import { createOrg, updateOrg, fetchLookups } from "@/api/organizationsApi";
 import { REGION_HIERARCHY } from "@/constants/regions";
 import { INDUSTRIES } from "@/constants/industries";
 
+const AUM_OPTIONS = ["< $10M", "$10M – $100M", "$100M – $500M", "$500M – $1B", "$1B – $10B", "> $10B"];
+const INVESTOR_TYPE_OPTIONS = ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"];
+
 const inputClass = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30";
 
 const Field = ({ label, children }) => (
@@ -80,7 +83,8 @@ export default function OrgForm({ org, onSave, onCancel }) {
     cause_areas: [], role_types: [], regions: [], target_populations: [],
     cause_subtopics: [],
     hbs_note: "", notable_alumni: "", size: "",
-    hq: "", year_established: "", employees: ""
+    hq: "", year_established: "", employees: "",
+    aum: "", investor_type: []
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -173,6 +177,23 @@ export default function OrgForm({ org, onSave, onCancel }) {
           {INDUSTRIES.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
       </Field>
+
+      {(form.org_type === "Impact Investing" || form.org_type === "Foundation") && (
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Assets Under Management (AUM)">
+            <select className={inputClass} value={form.aum || ""} onChange={e => set("aum", e.target.value)}>
+              <option value="">Select range...</option>
+              {AUM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </Field>
+          <div />
+        </div>
+      )}
+      {form.org_type === "Impact Investing" && (
+        <Field label="Investor Type">
+          <MultiCheck options={INVESTOR_TYPE_OPTIONS} value={form.investor_type || []} onChange={v => set("investor_type", v)} />
+        </Field>
+      )}
 
       <Field label="Employees">
         <select className={inputClass} value={form.employees} onChange={e => set("employees", e.target.value)}>

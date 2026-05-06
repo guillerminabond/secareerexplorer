@@ -95,6 +95,9 @@ export default function OrgModal({ org, onClose, onEdit }) {
             <Tags label="Regions" items={org.regions} />
             <Tags label="Target Populations" items={org.target_populations} />
 
+            {org.aum && <Section label="Assets Under Management" value={org.aum} />}
+            <Tags label="Investor Type" items={org.investor_type} />
+
             {(org.hq || org.year_established || org.employees) && (
               <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                 {org.hq && <span>📍 {org.hq}</span>}

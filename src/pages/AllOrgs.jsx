@@ -1,8 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark } from "lucide-react";
+import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark, X } from "lucide-react";
 import { fetchOrgs, updateSavesCount, deleteOrg } from "@/api/organizationsApi";
 import { expandRegions } from "@/constants/regions";
+
+/* ── Smart search parser (shared logic) ─────────────────────────────── */
+const SEARCH_PATTERNS = [
+  { regex: /(?:founded|established)\s+after\s+(\d{4})/i,                                      build: (m) => ({ field: "year_established", op: ">",       value: parseInt(m[1]),                          label: `Founded after ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+before\s+(\d{4})/i,                                     build: (m) => ({ field: "year_established", op: "<",       value: parseInt(m[1]),                          label: `Founded before ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+in\s+(\d{4})/i,                                         build: (m) => ({ field: "year_established", op: "=",       value: parseInt(m[1]),                          label: `Founded in ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+between\s+(\d{4})\s+(?:and|to|-)\s+(\d{4})/i,           build: (m) => ({ field: "year_established", op: "between", value: [parseInt(m[1]), parseInt(m[2])],        label: `Founded ${m[1]}–${m[2]}` }) },
+  { regex: /older\s+than\s+(\d+)\s+years?/i,                                                  build: (m) => ({ field: "year_established", op: "<",       value: new Date().getFullYear() - parseInt(m[1]), label: `Older than ${m[1]} years` }) },
+  { regex: /(?:newer|younger)\s+than\s+(\d+)\s+years?/i,                                      build: (m) => ({ field: "year_established", op: ">",       value: new Date().getFullYear() - parseInt(m[1]), label: `Newer than ${m[1]} years` }) },
+];
+function parseSearch(raw) {
+  let remaining = raw;
+  const conditions = [];
+  for (const { regex, build } of SEARCH_PATTERNS) {
+    const match = remaining.match(regex);
+    if (match) { conditions.push(build(match)); remaining = remaining.replace(match[0], "").trim(); }
+  }
+  remaining = remaining.replace(/^\s*(and|,)\s*/i, "").replace(/\s*(and|,)\s*$/i, "").trim();
+  return { keyword: remaining, conditions };
+}
+function matchesCondition(org, cond) {
+  const year = parseInt(org.year_established);
+  if (isNaN(year)) return false;
+  if (cond.op === ">") return year > cond.value;
+  if (cond.op === "<") return year < cond.value;
+  if (cond.op === "=") return year === cond.value;
+  if (cond.op === "between") return year >= cond.value[0] && year <= cond.value[1];
+  return true;
+}
 import FilterBar from "@/components/explore/FilterBar";
 import OrgTable from "@/components/explore/OrgTable";
 import OrgCard from "@/components/explore/OrgCard";
@@ -103,19 +132,28 @@ export default function AllOrgs() {
     }
   };
 
+  const parsed = useMemo(() => parseSearch(search), [search]);
+
   const filtered = orgs.filter((org) => {
     if (showSavedOnly && !savedIds.includes(org.id)) return false;
+    const kw = parsed.keyword;
     if (
-      search &&
-      !org.name?.toLowerCase().includes(search.toLowerCase()) &&
-      !org.description?.toLowerCase().includes(search.toLowerCase())
+      kw &&
+      !org.name?.toLowerCase().includes(kw.toLowerCase()) &&
+      !org.description?.toLowerCase().includes(kw.toLowerCase())
     )
       return false;
+    for (const cond of parsed.conditions) {
+      if (!matchesCondition(org, cond)) return false;
+    }
 
     // FilterBar filters
     for (const [key, values] of Object.entries(filters)) {
       if (!values?.length) continue;
-      if (key === "org_type") {
+      if (key === "aum") {
+        const orgAum = org.aum || "";
+        if (!values.includes(orgAum)) return false;
+      } else if (key === "org_type") {
         const orgVal = org[key] || "";
         const match = values.some(
           (v) =>
@@ -166,7 +204,7 @@ export default function AllOrgs() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 bg-white"
-            placeholder="Search organizations..."
+            placeholder='Search orgs... try "founded after 2003"'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -241,6 +279,26 @@ export default function AllOrgs() {
           </button>
         )}
       </div>
+
+      {parsed.conditions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <span className="text-xs text-gray-400 font-medium">Smart filters:</span>
+          {parsed.conditions.map((c, i) => (
+            <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-crimson/10 text-crimson text-xs font-medium rounded-full border border-crimson/20">
+              {c.label}
+              <button onClick={() => {
+                let cleaned = search;
+                for (const p of SEARCH_PATTERNS) {
+                  const m = cleaned.match(p.regex);
+                  if (m && p.build(m).label === c.label) { cleaned = cleaned.replace(p.regex, "").replace(/\s+/g, " ").trim(); break; }
+                }
+                setSearch(cleaned);
+              }} className="ml-0.5 hover:text-crimson/70"><X className="w-3 h-3" /></button>
+            </span>
+          ))}
+          {parsed.keyword && <span className="text-xs text-gray-400">+ keyword: "{parsed.keyword}"</span>}
+        </div>
+      )}
 
       {showFilters && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4">
