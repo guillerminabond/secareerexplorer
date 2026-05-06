@@ -26,6 +26,21 @@ function parseSearch(raw) {
   return { keyword: remaining, conditions };
 }
 
+// Normalize common search synonyms so "investors" matches "investing", etc.
+const SYNONYMS = [
+  [/\binvestors?\b/gi, "investing"],
+  [/\bfounders?\b/gi, "founder"],
+  [/\bnon-?profits?\b/gi, "nonprofit"],
+  [/\bngos?\b/gi, "nonprofit"],
+  [/\bcorps?\b/gi, "corporation"],
+  [/\bgovt?\b/gi, "government"],
+];
+function normalizeKeyword(kw) {
+  let out = kw;
+  for (const [pattern, replacement] of SYNONYMS) out = out.replace(pattern, replacement);
+  return out;
+}
+
 function matchesCondition(org, cond) {
   if (cond.field === "year_established") {
     const year = parseInt(org.year_established);
@@ -567,9 +582,16 @@ export default function Home() {
   const parsed = useMemo(() => parseSearch(search), [search]);
 
   const filtered = orgs.filter((org) => {
-    const kw = parsed.keyword;
-    if (kw && !org.name?.toLowerCase().includes(kw.toLowerCase()) &&
-      !org.description?.toLowerCase().includes(kw.toLowerCase())) return false;
+    const kw = parsed.keyword?.toLowerCase();
+    if (kw) {
+      const normalized = normalizeKeyword(kw);
+      const haystack = [
+        org.name, org.description, org.org_type, org.industry,
+        ...(org.cause_areas || []), ...(org.role_types || []),
+        ...(org.regions || []), ...(org.target_populations || []),
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(kw) && !haystack.includes(normalized)) return false;
+    }
     for (const cond of parsed.conditions) {
       if (!matchesCondition(org, cond)) return false;
     }

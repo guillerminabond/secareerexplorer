@@ -8,6 +8,40 @@ import { PARENT_REGIONS, expandRegions } from "@/constants/regions";
 import OrgCard from "./OrgCard";
 import OrgModal from "./OrgModal";
 
+// ── Smart search parser ───────────────────────────────────────────────────────
+const SEARCH_PATTERNS = [
+  { regex: /(?:founded|established)\s+after\s+(\d{4})/i,                                      build: (m) => ({ field: "year_established", op: ">",       value: parseInt(m[1]),                          label: `Founded after ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+before\s+(\d{4})/i,                                     build: (m) => ({ field: "year_established", op: "<",       value: parseInt(m[1]),                          label: `Founded before ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+in\s+(\d{4})/i,                                         build: (m) => ({ field: "year_established", op: "=",       value: parseInt(m[1]),                          label: `Founded in ${m[1]}` }) },
+  { regex: /(?:founded|established)\s+between\s+(\d{4})\s+(?:and|to|-)\s+(\d{4})/i,           build: (m) => ({ field: "year_established", op: "between", value: [parseInt(m[1]), parseInt(m[2])],        label: `Founded ${m[1]}–${m[2]}` }) },
+  { regex: /older\s+than\s+(\d+)\s+years?/i,                                                  build: (m) => ({ field: "year_established", op: "<",       value: new Date().getFullYear() - parseInt(m[1]), label: `Older than ${m[1]} years` }) },
+  { regex: /(?:newer|younger)\s+than\s+(\d+)\s+years?/i,                                      build: (m) => ({ field: "year_established", op: ">",       value: new Date().getFullYear() - parseInt(m[1]), label: `Newer than ${m[1]} years` }) },
+];
+
+function parseSearchQuery(raw) {
+  let remaining = raw;
+  const conditions = [];
+  for (const { regex, build } of SEARCH_PATTERNS) {
+    const match = remaining.match(regex);
+    if (match) {
+      conditions.push(build(match));
+      remaining = remaining.replace(match[0], "").trim();
+    }
+  }
+  remaining = remaining.replace(/^\s*(and|,)\s*/i, "").replace(/\s*(and|,)\s*$/i, "").trim();
+  return { keyword: remaining, conditions };
+}
+
+function matchesCondition(org, cond) {
+  const year = parseInt(org.year_established);
+  if (isNaN(year)) return false;
+  if (cond.op === ">")       return year > cond.value;
+  if (cond.op === "<")       return year < cond.value;
+  if (cond.op === "=")       return year === cond.value;
+  if (cond.op === "between") return year >= cond.value[0] && year <= cond.value[1];
+  return true;
+}
+
 // ── Text search ───────────────────────────────────────────────────────────────
 const STOPWORDS = new Set([
   "in", "for", "the", "and", "or", "a", "an", "with", "of", "at", "to", "by",
@@ -33,11 +67,29 @@ function termScore(org, term) {
 }
 
 function searchOrgs(orgs, query) {
-  const raw = query?.trim().toLowerCase() ?? "";
+  const raw = query?.trim() ?? "";
   if (raw.length < 2) return { mode: "idle" };
-  const terms = raw.split(/\s+/).filter(t => t.length > 1 && !STOPWORDS.has(t));
-  if (!terms.length) return { mode: "idle" };
-  const scored = orgs.map(org => {
+
+  // 1. Extract structured conditions (e.g. "founded after 2003", "older than 5 years")
+  const { keyword, conditions } = parseSearchQuery(raw);
+
+  // 2. Pre-filter orgs by structured conditions
+  let pool = orgs;
+  if (conditions.length > 0) {
+    pool = orgs.filter(org => conditions.every(c => matchesCondition(org, c)));
+  }
+
+  // 3. If there are structured conditions but no remaining keywords, return all matching orgs
+  if (!keyword && conditions.length > 0) {
+    return { mode: "full", results: pool, terms: [], conditions };
+  }
+
+  // 4. Score the remaining keyword terms
+  const terms = keyword.toLowerCase().split(/\s+/).filter(t => t.length > 1 && !STOPWORDS.has(t));
+  if (!terms.length && !conditions.length) return { mode: "idle" };
+  if (!terms.length && conditions.length) return { mode: "full", results: pool, terms: [], conditions };
+
+  const scored = pool.map(org => {
     const perTerm   = terms.map(t => ({ term: t, score: termScore(org, t) }));
     const matched   = perTerm.filter(r => r.score > 0);
     const unmatched = perTerm.filter(r => r.score === 0);
@@ -45,9 +97,9 @@ function searchOrgs(orgs, query) {
   });
   const full = scored.filter(s => s.unmatched.length === 0)
     .sort((a, b) => b.totalScore - a.totalScore).map(s => s.org);
-  if (full.length > 0) return { mode: "full", results: full, terms };
+  if (full.length > 0) return { mode: "full", results: full, terms, conditions };
   const maxMatched = Math.max(0, ...scored.map(s => s.matched.length));
-  if (maxMatched === 0) return { mode: "none", terms };
+  if (maxMatched === 0) return { mode: "none", terms, conditions };
   const partials = scored.filter(s => s.matched.length === maxMatched)
     .sort((a, b) => b.totalScore - a.totalScore);
   const unmatchedFreq = {};
@@ -56,7 +108,7 @@ function searchOrgs(orgs, query) {
   }));
   const missing = Object.entries(unmatchedFreq).sort((a, b) => b[1] - a[1]).map(([t]) => t);
   return { mode: "partial", results: partials.map(s => s.org), terms,
-    matchedCount: maxMatched, totalTerms: terms.length, missing };
+    matchedCount: maxMatched, totalTerms: terms.length, missing, conditions };
 }
 
 // ── Option taxonomies ─────────────────────────────────────────────────────────
@@ -538,6 +590,29 @@ export default function QuizExplore({ orgs, savedIds, onSave, onEdit, onDelete }
             </button>
           )}
         </div>
+
+        {/* Smart filter chips */}
+        {isSearching && search.conditions?.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-xs text-gray-400 font-medium">Smart filters:</span>
+            {search.conditions.map((c, i) => (
+              <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 bg-crimson/10 text-crimson text-xs font-medium rounded-full border border-crimson/20">
+                {c.label}
+                <button onClick={() => {
+                  let cleaned = searchQuery;
+                  for (const p of SEARCH_PATTERNS) {
+                    const m = cleaned.match(p.regex);
+                    if (m && p.build(m).label === c.label) { cleaned = cleaned.replace(p.regex, "").replace(/\s+/g, " ").trim(); break; }
+                  }
+                  setSearchQuery(cleaned);
+                }} className="ml-0.5 hover:text-crimson/70"><X className="w-3 h-3" /></button>
+              </span>
+            ))}
+            {parseSearchQuery(searchQuery).keyword && (
+              <span className="text-xs text-gray-400">+ keyword: "{parseSearchQuery(searchQuery).keyword}"</span>
+            )}
+          </div>
+        )}
 
         {/* Search results */}
         {isSearching && (

@@ -23,6 +23,19 @@ function parseSearch(raw) {
   remaining = remaining.replace(/^\s*(and|,)\s*/i, "").replace(/\s*(and|,)\s*$/i, "").trim();
   return { keyword: remaining, conditions };
 }
+const SYNONYMS = [
+  [/\binvestors?\b/gi, "investing"],
+  [/\bnon-?profits?\b/gi, "nonprofit"],
+  [/\bngos?\b/gi, "nonprofit"],
+  [/\bcorps?\b/gi, "corporation"],
+  [/\bgovt?\b/gi, "government"],
+];
+function normalizeKeyword(kw) {
+  let out = kw;
+  for (const [pattern, replacement] of SYNONYMS) out = out.replace(pattern, replacement);
+  return out;
+}
+
 function matchesCondition(org, cond) {
   const year = parseInt(org.year_established);
   if (isNaN(year)) return false;
@@ -136,13 +149,16 @@ export default function AllOrgs() {
 
   const filtered = orgs.filter((org) => {
     if (showSavedOnly && !savedIds.includes(org.id)) return false;
-    const kw = parsed.keyword;
-    if (
-      kw &&
-      !org.name?.toLowerCase().includes(kw.toLowerCase()) &&
-      !org.description?.toLowerCase().includes(kw.toLowerCase())
-    )
-      return false;
+    const kw = parsed.keyword?.toLowerCase();
+    if (kw) {
+      const normalized = normalizeKeyword(kw);
+      const haystack = [
+        org.name, org.description, org.org_type, org.industry,
+        ...(org.cause_areas || []), ...(org.role_types || []),
+        ...(org.regions || []), ...(org.target_populations || []),
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(kw) && !haystack.includes(normalized)) return false;
+    }
     for (const cond of parsed.conditions) {
       if (!matchesCondition(org, cond)) return false;
     }
