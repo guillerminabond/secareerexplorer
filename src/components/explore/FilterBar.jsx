@@ -24,8 +24,8 @@ const NON_REGION_FILTERS = {
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
 };
 
-const AUM_FILTER = { aum: ["< $10M", "$10M – $100M", "$100M – $500M", "$500M – $1B", "$1B – $10B", "> $10B"] };
-const INVESTOR_TYPE_FILTER = { investor_type: ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"] };
+const AUM_FILTER = { aum_range: ["< $50M", "$50M – $250M", "$250M – $1B", "$1B – $10B", "$10B+"] };
+const INVESTOR_TYPE_FILTER = { investor_types: ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"] };
 
 const LABEL_MAP = {
   cause_areas:        "Cause Areas",
@@ -157,8 +157,8 @@ export default function FilterBar({ active, onChange }) {
     if (key === "org_type") {
       const hasAumType = updated.some(v => v === "Impact Investing" || v === "Foundation");
       const hasInvestor = updated.includes("Impact Investing");
-      if (!hasAumType) delete next.aum;
-      if (!hasInvestor) delete next.investor_type;
+      if (!hasAumType) delete next.aum_range;
+      if (!hasInvestor) delete next.investor_types;
     }
 
     onChange(next);

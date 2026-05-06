@@ -117,8 +117,8 @@ export default function AllOrgs() {
       // FilterBar filters
       for (const [key, values] of Object.entries(filters)) {
         if (!values?.length) continue;
-        if (key === "aum") {
-          const orgAum = org.aum || "";
+        if (key === "aum_range") {
+          const orgAum = org.aum_range || "";
           if (!values.includes(orgAum)) return false;
         } else if (key === "org_type") {
           const orgVal = org[key] || "";

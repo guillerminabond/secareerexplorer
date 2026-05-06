@@ -542,8 +542,8 @@ export default function Home() {
           const orgVal = org[key] || "";
           const match = values.some(v => orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation")));
           if (!match) return false;
-        } else if (key === "aum") {
-          const orgAum = org.aum || "";
+        } else if (key === "aum_range") {
+          const orgAum = org.aum_range || "";
           if (!values.includes(orgAum)) return false;
         } else if (key === "regions") {
           const expanded = expandRegions(values);

@@ -32,11 +32,13 @@ const ORG_SELECT = `
   badge_hbs_founder,
   org_type:org_types(id, name),
   employee_range:employee_ranges(id, label),
+  aum_range:aum_ranges(id, label, sort_order),
   org_cause_areas:organization_cause_areas(cause_area:cause_areas(id, name)),
   org_role_types:organization_role_types(role_type:role_types(id, name)),
   org_regions:organization_regions(region:regions(id, name)),
   org_target_populations:organization_target_populations(target_population:target_populations(id, name)),
-  org_cause_subtopics:organization_cause_subtopics(cause_subtopic:cause_subtopics(id, name))
+  org_cause_subtopics:organization_cause_subtopics(cause_subtopic:cause_subtopics(id, name)),
+  org_investor_types:organization_investor_types(investor_type:investor_types(id, name))
 `
 
 // ── Transform joined row → flat app-friendly object ─────────
@@ -47,11 +49,14 @@ function transformOrg(row) {
     org_type_id:            row.org_type?.id           ?? null,
     employees:              row.employee_range?.label  ?? '',
     employee_range_id:      row.employee_range?.id     ?? null,
+    aum_range:              row.aum_range?.label       ?? '',
+    aum_range_id:           row.aum_range?.id          ?? null,
     cause_areas:            (row.org_cause_areas        ?? []).map(x => x.cause_area.name),
     role_types:             (row.org_role_types         ?? []).map(x => x.role_type.name),
     regions:                (row.org_regions            ?? []).map(x => x.region.name),
     target_populations:     (row.org_target_populations ?? []).map(x => x.target_population.name),
     cause_subtopics:        (row.org_cause_subtopics    ?? []).map(x => x.cause_subtopic.name),
+    investor_types:         (row.org_investor_types     ?? []).map(x => x.investor_type.name),
     industry:               row.industry               ?? '',
     // scalar fields — passed through as-is
     saves:                  row.saves                  ?? 0,
@@ -64,14 +69,16 @@ function transformOrg(row) {
     org_regions: undefined,
     org_target_populations: undefined,
     org_cause_subtopics: undefined,
+    org_investor_types: undefined,
     employee_range: undefined,
+    aum_range: undefined,
   }
 }
 
 // ── Lookup: name → id for any lookup table ───────────────────
-async function lookupId(table, name) {
+async function lookupId(table, name, column = 'name') {
   if (!name) return null
-  const { data } = await supabase.from(table).select('id').eq('name', name).single()
+  const { data } = await supabase.from(table).select('id').eq(column, name).single()
   return data?.id ?? null
 }
 
@@ -173,8 +180,9 @@ export async function fetchOrgs() {
 
 /** Create a new organization */
 export async function createOrg(form) {
-  const orgTypeId      = await lookupId('org_types',       form.org_type)
+  const orgTypeId       = await lookupId('org_types',       form.org_type)
   const employeeRangeId = await lookupId('employee_ranges', form.employees)
+  const aumRangeId      = await lookupId('aum_ranges',      form.aum_range, 'label')
 
   const { data, error } = await supabase
     .from('organizations')
@@ -184,6 +192,7 @@ export async function createOrg(form) {
       website:                 form.website,
       org_type_id:             orgTypeId,
       employee_range_id:       employeeRangeId,
+      aum_range_id:            aumRangeId,
       size:                    form.size,
       hq:                      form.hq,
       industry:                form.industry || null,
@@ -209,6 +218,7 @@ export async function createOrg(form) {
 export async function updateOrg(id, form) {
   const orgTypeId       = await lookupId('org_types',       form.org_type)
   const employeeRangeId = await lookupId('employee_ranges', form.employees)
+  const aumRangeId      = await lookupId('aum_ranges',      form.aum_range, 'label')
 
   const { error } = await supabase
     .from('organizations')
@@ -218,6 +228,7 @@ export async function updateOrg(id, form) {
       website:                 form.website,
       org_type_id:             orgTypeId,
       employee_range_id:       employeeRangeId,
+      aum_range_id:            aumRangeId,
       size:                    form.size,
       hq:                      form.hq,
       industry:                form.industry || null,
@@ -254,7 +265,7 @@ export async function deleteOrg(id) {
 
 /** Fetch all lookup table options (for dropdowns / filters) */
 export async function fetchLookups() {
-  const [orgTypes, causeAreas, roleTypes, regionsList, populations, empRanges, causeSubtopics] =
+  const [orgTypes, causeAreas, roleTypes, regionsList, populations, empRanges, causeSubtopics, aumRanges, investorTypes] =
     await Promise.all([
       supabase.from('org_types').select('id, name').order('name'),
       supabase.from('cause_areas').select('id, name').order('name'),
@@ -263,6 +274,8 @@ export async function fetchLookups() {
       supabase.from('target_populations').select('id, name').order('name'),
       supabase.from('employee_ranges').select('id, label, sort_order').order('sort_order'),
       supabase.from('cause_subtopics').select('id, name, cause_area_id, cause_area:cause_areas(name)').order('name'),
+      supabase.from('aum_ranges').select('id, label, sort_order').order('sort_order'),
+      supabase.from('investor_types').select('id, name').order('name'),
     ])
   return {
     org_types:          (orgTypes.data     ?? []).map(r => r.name),
@@ -271,6 +284,8 @@ export async function fetchLookups() {
     regions:            (regionsList.data  ?? []).map(r => r.name),
     target_populations: (populations.data  ?? []).map(r => r.name),
     employee_ranges:    (empRanges.data    ?? []).map(r => r.label),
+    aum_ranges:         (aumRanges.data    ?? []).map(r => r.label),
+    investor_types:     (investorTypes.data ?? []).map(r => r.name),
     // cause_subtopics grouped by cause area name for easy lookup in forms/filters
     cause_subtopics_by_cause: (causeSubtopics.data ?? []).reduce((acc, r) => {
       const cause = r.cause_area?.name;
@@ -284,12 +299,13 @@ export async function fetchLookups() {
 
 // ── Internal: save junction tables for an org ────────────────
 async function _saveJunctions(orgId, form) {
-  const [caRows, rtRows, rRows, tpRows, csRows] = await Promise.all([
+  const [caRows, rtRows, rRows, tpRows, csRows, itRows] = await Promise.all([
     lookupIds('cause_areas',        form.cause_areas        ?? []),
     lookupIds('role_types',         form.role_types         ?? []),
     lookupIds('regions',            form.regions            ?? []),
     lookupIds('target_populations', form.target_populations ?? []),
     lookupIds('cause_subtopics',    form.cause_subtopics    ?? []),
+    lookupIds('investor_types',     form.investor_types     ?? []),
   ])
 
   await Promise.all([
@@ -298,5 +314,6 @@ async function _saveJunctions(orgId, form) {
     replaceJunction('organization_regions',            orgId, 'region_id',              rRows.map(r => r.id)),
     replaceJunction('organization_target_populations', orgId, 'target_population_id',   tpRows.map(r => r.id)),
     replaceJunction('organization_cause_subtopics',    orgId, 'cause_subtopic_id',      csRows.map(r => r.id)),
+    replaceJunction('organization_investor_types',     orgId, 'investor_type_id',       itRows.map(r => r.id)),
   ])
 }

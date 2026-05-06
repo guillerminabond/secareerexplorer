@@ -1,6 +1,9 @@
--- Add conditional fields for Impact Investing and Foundation orgs
-ALTER TABLE organizations ADD COLUMN IF NOT EXISTS aum text;
-ALTER TABLE organizations ADD COLUMN IF NOT EXISTS investor_type text[];
-
--- Optional: migrate legacy combined org_type values (review per-org before running)
--- UPDATE organizations SET org_type = 'Impact Investing' WHERE org_type = 'Impact Investing / Foundation';
+-- DEPRECATED — this file is superseded by update_aum_investor_type.sql
+--
+-- AUM is now stored as aum_range_id (FK to aum_ranges lookup table)
+-- instead of a free-text aum column.
+--
+-- investor_type is now normalized into:
+--   investor_types (lookup) + organization_investor_types (junction)
+--
+-- See update_aum_investor_type.sql for the full schema + data migration.
