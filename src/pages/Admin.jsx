@@ -15,93 +15,226 @@ import {
 import { useAdmin } from "@/contexts/AdminContext";
 import { supabase } from "@/api/supabaseClient";
 
+// ── Edge Function helper ──────────────────────────────────────────
+const INVITE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-admin`;
+
+async function callInviteFunction(method, body = null) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error("Not authenticated");
+  const opts = {
+    method,
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(INVITE_FN_URL, opts);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || `Request failed (${res.status})`);
+  return json;
+}
+
 // ── Users tab ─────────────────────────────────────────────────────
 function UsersTab() {
   const [newEmail,    setNewEmail]    = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [creating,    setCreating]    = useState(false);
   const [createMsg,   setCreateMsg]   = useState(null);
 
-  const handleCreate = async () => {
-    setCreateMsg(null);
-    if (!newEmail.trim() || !newPassword) {
-      setCreateMsg({ type: "error", text: "Email and password are required." });
-      return;
-    }
-    if (newPassword.length < 8) {
-      setCreateMsg({ type: "error", text: "Password must be at least 8 characters." });
-      return;
-    }
-    setCreating(true);
-    const { error } = await supabase.auth.signUp({
-      email:    newEmail.trim(),
-      password: newPassword,
-      options:  { emailRedirectTo: `${window.location.origin}/update-password` },
-    });
-    setCreating(false);
-    if (error) {
-      setCreateMsg({ type: "error", text: error.message || "Failed to create user." });
-    } else {
-      setCreateMsg({ type: "success", text: `Invite sent to ${newEmail.trim()}. They must confirm their email before logging in.` });
-      setNewEmail("");
-      setNewPassword("");
+  // Admin users list
+  const [users,       setUsers]       = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [usersError,  setUsersError]  = useState(null);
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    setUsersError(null);
+    try {
+      const data = await callInviteFunction("GET");
+      setUsers(data.users ?? []);
+    } catch (err) {
+      setUsersError(err.message);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
+  useEffect(() => { fetchUsers(); }, []);
+
+  const handleCreate = async () => {
+    setCreateMsg(null);
+    if (!newEmail.trim()) {
+      setCreateMsg({ type: "error", text: "Email is required." });
+      return;
+    }
+    setCreating(true);
+    try {
+      const data = await callInviteFunction("POST", { email: newEmail.trim() });
+      setCreateMsg({ type: "success", text: data.message });
+      setNewEmail("");
+      fetchUsers(); // refresh the table
+    } catch (err) {
+      setCreateMsg({ type: "error", text: err.message || "Failed to send invite." });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const formatDate = (iso) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+    });
+  };
+
+  const formatDateTime = (iso) => {
+    if (!iso) return "Never";
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "numeric", minute: "2-digit",
+    });
+  };
+
+  const getStatus = (user) => {
+    if (user.confirmed_at) return "confirmed";
+    return "invited";
+  };
+
   return (
-    <div className="max-w-md">
-      <div className="bg-white rounded-2xl border border-gray-100 p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <UserPlus className="w-4 h-4 text-[#A51C30]" />
-          <h2 className="text-sm font-bold text-gray-900">Create New Admin User</h2>
-        </div>
-        <p className="text-xs text-gray-400 mb-5">
-          A confirmation email will be sent. The new user must verify their email before they can log in.
-        </p>
-
-        <input
-          type="email"
-          placeholder="New admin email"
-          value={newEmail}
-          onChange={e => { setNewEmail(e.target.value); setCreateMsg(null); }}
-          onKeyDown={e => e.key === "Enter" && handleCreate()}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
-        />
-        <input
-          type="password"
-          placeholder="Temporary password (8+ chars)"
-          value={newPassword}
-          onChange={e => { setNewPassword(e.target.value); setCreateMsg(null); }}
-          onKeyDown={e => e.key === "Enter" && handleCreate()}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
-        />
-
-        {createMsg && (
-          <p className={`text-xs mb-3 ${createMsg.type === "success" ? "text-green-600" : "text-red-500"}`}>
-            {createMsg.text}
+    <div className="space-y-6">
+      {/* ── Create form ─────────────────────────────────────────── */}
+      <div className="max-w-md">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus className="w-4 h-4 text-[#A51C30]" />
+            <h2 className="text-sm font-bold text-gray-900">Create New Admin User</h2>
+          </div>
+          <p className="text-xs text-gray-400 mb-5">
+            An invite email will be sent. The new user sets their own password via the link.
           </p>
-        )}
 
-        <button
-          onClick={handleCreate}
-          disabled={creating}
-          className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
-        >
-          {creating && <Loader2 className="w-4 h-4 animate-spin" />}
-          {creating ? "Creating…" : "Create User & Send Invite"}
-        </button>
+          <input
+            type="email"
+            placeholder="New admin email"
+            value={newEmail}
+            onChange={e => { setNewEmail(e.target.value); setCreateMsg(null); }}
+            onKeyDown={e => e.key === "Enter" && handleCreate()}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+          />
+
+          {createMsg && (
+            <p className={`text-xs mb-3 ${createMsg.type === "success" ? "text-green-600" : "text-red-500"}`}>
+              {createMsg.text}
+            </p>
+          )}
+
+          <button
+            onClick={handleCreate}
+            disabled={creating}
+            className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {creating && <Loader2 className="w-4 h-4 animate-spin" />}
+            {creating ? "Sending…" : "Send Invite"}
+          </button>
+        </div>
       </div>
 
-      <div className="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-700">
-        <strong>Note:</strong> New users will have full admin write access once confirmed.
-        Manage existing users or deactivate accounts in the{" "}
+      {/* ── Admin users table ───────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#A51C30]" />
+            <h2 className="text-sm font-bold text-gray-900">Admin Users</h2>
+            {!loadingUsers && (
+              <span className="text-xs text-gray-400">({users.length})</span>
+            )}
+          </div>
+          <button
+            onClick={fetchUsers}
+            disabled={loadingUsers}
+            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+          >
+            {loadingUsers ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            Refresh
+          </button>
+        </div>
+
+        {usersError && (
+          <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-4">
+            <p className="text-xs text-red-600">{usersError}</p>
+            <p className="text-xs text-red-400 mt-1">
+              Make sure the <code className="bg-red-100 px-1 rounded">invite-admin</code> Edge Function is deployed.
+            </p>
+          </div>
+        )}
+
+        {loadingUsers && !usersError ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+          </div>
+        ) : !usersError && users.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-6">No admin users found.</p>
+        ) : !usersError ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4">Email</th>
+                  <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-400 pb-2 pr-4">Created</th>
+                  <th className="text-left text-xs font-medium text-gray-400 pb-2">Last Login</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(u => {
+                  const status = getStatus(u);
+                  return (
+                    <tr key={u.id} className="border-b border-gray-50 last:border-0">
+                      <td className="py-2.5 pr-4">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                          <span className="text-sm text-gray-700">{u.email}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        {status === "confirmed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                            <CheckCircle className="w-3 h-3" />
+                            Confirmed
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                            <Clock className="w-3 h-3" />
+                            Invited
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 pr-4 text-xs text-gray-500">
+                        {formatDate(u.created_at)}
+                      </td>
+                      <td className="py-2.5 text-xs text-gray-500">
+                        {formatDateTime(u.last_sign_in_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="max-w-md bg-amber-50 border border-amber-100 rounded-xl p-4 text-xs text-amber-700">
+        <strong>Note:</strong> All admin users have the same permissions.
+        To deactivate an account, use the{" "}
         <a
           href="https://supabase.com/dashboard"
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-amber-900"
         >
-          Supabase Dashboard → Authentication → Users
+          Supabase Dashboard
         </a>.
       </div>
     </div>

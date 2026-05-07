@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import LearnMoreModal from "./LearnMoreModal";
 
 const ORG_TYPES = [
@@ -101,6 +103,7 @@ function TypeCard({ item, onClick }) {
 }
 
 export default function OrgsTab() {
+  const navigate = useNavigate();
   const [selected, setSelected] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
@@ -158,10 +161,36 @@ export default function OrgsTab() {
               </div>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Example Organizations</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-gray-700">Example Organizations</p>
+                <button
+                  onClick={() => {
+                    const filterKey = selectedCategory === "org_type" ? "org_type" : "role_types";
+                    // Map display labels to database values where they differ
+                    const DB_LABEL_MAP = { "Government": "Government / Public Sector" };
+                    const filterValue = DB_LABEL_MAP[selected.label] || selected.label;
+                    navigate("/all-orgs/database", {
+                      state: { filters: { [filterKey]: [filterValue] } },
+                    });
+                  }}
+                  className="flex items-center gap-1 text-xs font-medium text-crimson hover:text-crimson/80 transition-colors"
+                >
+                  More <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {detail.examples?.map((e) => (
-                  <span key={e} className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">{e}</span>
+                  <button
+                    key={e}
+                    onClick={() => {
+                      navigate("/all-orgs/database", {
+                        state: { openOrgName: e },
+                      });
+                    }}
+                    className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-crimson/10 hover:text-crimson transition-colors cursor-pointer"
+                  >
+                    {e}
+                  </button>
                 ))}
               </div>
             </div>

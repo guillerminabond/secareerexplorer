@@ -14,7 +14,6 @@ Set these in your environment (e.g. Vercel project → Settings → Environment 
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
-- `VITE_ADMIN_PASSWORD`
 
 Do not commit `.env`; use `.env.example` as a template.
 

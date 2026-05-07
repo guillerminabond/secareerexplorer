@@ -36,6 +36,9 @@ export default function AllOrgs() {
   // Pre-populate filters if navigated here from the dashboard
   const [filters, setFilters] = useState(() => location.state?.filters || {});
 
+  // Store the org name to auto-open (from Learn More example links)
+  const [pendingOrgName] = useState(() => location.state?.openOrgName || null);
+
   const pathnameRef = React.useRef(location.pathname);
   const navigateRef = React.useRef(navigate);
   navigateRef.current = navigate;
@@ -43,10 +46,20 @@ export default function AllOrgs() {
     // Clear router state after consuming it so back-nav doesn't re-apply stale filters.
     // We only want this to fire once on mount, so we read refs rather than listing
     // location/navigate as deps (which would re-run on every navigation).
-    if (location.state?.filters) {
+    if (location.state?.filters || location.state?.openOrgName) {
       navigateRef.current(pathnameRef.current, { replace: true, state: null });
     }
   }, []); // intentional: runs only on mount to consume initial route state
+
+  // Auto-open an org modal when navigated here with openOrgName
+  useEffect(() => {
+    if (pendingOrgName && orgs.length > 0 && !selectedOrg) {
+      const match = orgs.find(
+        (o) => o.name.toLowerCase() === pendingOrgName.toLowerCase()
+      );
+      if (match) setSelectedOrg(match);
+    }
+  }, [pendingOrgName, orgs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [search, setSearch] = useState("");
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [savedIds, setSavedIds] = useState(() => {
