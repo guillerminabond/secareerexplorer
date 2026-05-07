@@ -17,12 +17,15 @@ const CAUSE_OPTIONS = [
 ];
 const REGION_OPTIONS = PARENT_REGIONS;
 const ORG_TYPE_OPTIONS = [
-  "Nonprofit", "Impact Investing", "Foundation", "Hybrid",
-  "B Corporation", "Government / Public Sector", "Cooperative",
+  "Nonprofit", "Social Enterprise", "Impact Investing", "Foundation",
+  "Government / Public Sector",
 ];
+// Legacy DB values that should match "Social Enterprise" in filters
+const SOCIAL_ENTERPRISE_ALIASES = new Set(["B Corporation", "Hybrid", "Cooperative", "Social Enterprise"]);
 const POPULATION_OPTIONS = [
   "People in Poverty", "Women & Girls", "Children", "Youth & Teenagers",
   "Smallholder Farmers", "Migrants & Refugees", "Families",
+  "LGBTQ+", "People with Disabilities", "Indigenous Communities", "Elderly",
 ];
 const ROLE_OPTIONS = ["Operator", "Funder", "Enabler", "Advocacy & Policy"];
 
@@ -30,38 +33,36 @@ const ROLE_OPTIONS = ["Operator", "Funder", "Enabler", "Advocacy & Policy"];
 // When a cause is selected, options in these maps are sorted to the top of the
 // subsequent filter step. Hard disable comes from real data counts, not maps.
 const CAUSE_POPULATION_MAP = {
-  "Poverty Alleviation":    ["People in Poverty", "Families", "Children", "Women & Girls", "Smallholder Farmers", "Migrants & Refugees"],
-  "Economic Development":   ["People in Poverty", "Women & Girls", "Youth & Teenagers", "Smallholder Farmers", "Families"],
-  "Global Health":          ["People in Poverty", "Children", "Families", "Women & Girls", "Migrants & Refugees"],
-  "Education":              ["Children", "Youth & Teenagers", "Women & Girls", "People in Poverty", "Families"],
-  "Climate & Energy":       ["Smallholder Farmers", "People in Poverty", "Families", "Children"],
-  "Gender & Social Justice":["Women & Girls", "Youth & Teenagers", "People in Poverty", "Migrants & Refugees"],
-  "Financial Inclusion":    ["People in Poverty", "Women & Girls", "Smallholder Farmers", "Families"],
-  "Housing & Community":    ["Families", "People in Poverty", "Migrants & Refugees", "Youth & Teenagers"],
-  "Arts & Culture":         ["Children", "Youth & Teenagers", "Families"],
+  "Poverty Alleviation":    ["People in Poverty", "Families", "Children", "Women & Girls", "Smallholder Farmers", "Migrants & Refugees", "Indigenous Communities", "Elderly"],
+  "Economic Development":   ["People in Poverty", "Women & Girls", "Youth & Teenagers", "Smallholder Farmers", "Families", "Indigenous Communities", "People with Disabilities"],
+  "Global Health":          ["People in Poverty", "Children", "Families", "Women & Girls", "Migrants & Refugees", "LGBTQ+", "People with Disabilities", "Elderly"],
+  "Education":              ["Children", "Youth & Teenagers", "Women & Girls", "People in Poverty", "Families", "People with Disabilities", "Indigenous Communities"],
+  "Climate & Energy":       ["Smallholder Farmers", "People in Poverty", "Families", "Children", "Indigenous Communities"],
+  "Gender & Social Justice":["Women & Girls", "Youth & Teenagers", "People in Poverty", "Migrants & Refugees", "LGBTQ+", "Indigenous Communities", "People with Disabilities"],
+  "Financial Inclusion":    ["People in Poverty", "Women & Girls", "Smallholder Farmers", "Families", "Elderly"],
+  "Housing & Community":    ["Families", "People in Poverty", "Migrants & Refugees", "Youth & Teenagers", "Elderly", "People with Disabilities"],
+  "Arts & Culture":         ["Children", "Youth & Teenagers", "Families", "Indigenous Communities"],
 };
 
 const CAUSE_ORGTYPE_MAP = {
-  "Poverty Alleviation":    ["Nonprofit", "Foundation", "Impact Investing", "Hybrid"],
-  "Economic Development":   ["Nonprofit", "Impact Investing", "Foundation", "B Corporation", "Cooperative"],
+  "Poverty Alleviation":    ["Nonprofit", "Foundation", "Impact Investing", "Social Enterprise"],
+  "Economic Development":   ["Nonprofit", "Impact Investing", "Foundation", "Social Enterprise"],
   "Global Health":          ["Nonprofit", "Foundation", "Impact Investing"],
-  "Education":              ["Nonprofit", "Foundation", "Government / Public Sector", "B Corporation"],
-  "Climate & Energy":       ["Nonprofit", "B Corporation", "Impact Investing", "Foundation", "Cooperative"],
+  "Education":              ["Nonprofit", "Foundation", "Government / Public Sector", "Social Enterprise"],
+  "Climate & Energy":       ["Nonprofit", "Social Enterprise", "Impact Investing", "Foundation"],
   "Gender & Social Justice":["Nonprofit", "Foundation", "Government / Public Sector"],
-  "Financial Inclusion":    ["Nonprofit", "Impact Investing", "Foundation", "B Corporation"],
-  "Housing & Community":    ["Nonprofit", "Foundation", "Government / Public Sector", "Cooperative"],
+  "Financial Inclusion":    ["Nonprofit", "Impact Investing", "Foundation", "Social Enterprise"],
+  "Housing & Community":    ["Nonprofit", "Foundation", "Government / Public Sector", "Social Enterprise"],
   "Arts & Culture":         ["Nonprofit", "Foundation"],
 };
 
 // Map org types present in quiz results → relevant resource filter tags
 const ORG_TYPE_RESOURCE_TAGS = {
   "Nonprofit":                 ["Nonprofit", "Career Support"],
+  "Social Enterprise":         ["Social Enterprise", "Career Support"],
   "Impact Investing":          ["Impact Investing", "Career Support"],
   "Foundation":                ["Foundation", "Career Support"],
-  "B Corporation":             ["Career Support"],
-  "Hybrid":                    ["Career Support"],
   "Government / Public Sector":["Career Support"],
-  "Cooperative":               ["Career Support"],
 };
 
 // ── Stream definitions ────────────────────────────────────────────────────────
@@ -142,12 +143,10 @@ const DESCRIPTIONS = {
   "Arts & Culture":           "Using creative expression and cultural work to drive social change.",
   // Org types
   "Nonprofit":                "Mission-driven organizations reinvesting all revenue into their programs and services.",
+  "Social Enterprise":        "Mission-driven businesses blending commercial and social models — includes B Corps, cooperatives, PBCs, and hybrid structures.",
   "Impact Investing":         "Funds and vehicles deploying capital to generate measurable social and financial returns.",
   "Foundation":               "Philanthropic organizations making grants to support nonprofit and social sector work.",
-  "Hybrid":                   "Organizations blending nonprofit and for-profit models (e.g., PBCs, L3Cs).",
-  "B Corporation":            "Certified for-profit companies meeting high standards of social and environmental performance.",
   "Government / Public Sector":"Government agencies and public institutions driving policy-led social outcomes.",
-  "Cooperative":              "Member-owned organizations sharing profits and decision-making democratically.",
   // Role types
   "Operator":          "Organizations directly delivering programs and services on the ground.",
   "Funder":            "Foundations and investors providing grants or capital to other organizations.",
@@ -169,6 +168,10 @@ const DESCRIPTIONS = {
   "Smallholder Farmers": "Supporting agricultural smallholders and rural communities.",
   "Migrants & Refugees": "Serving displaced people and those navigating migration.",
   "Families":            "Holistic support for family units and households.",
+  "LGBTQ+":              "Programs advancing rights, health, and inclusion for LGBTQ+ communities.",
+  "People with Disabilities": "Services and advocacy for people with physical, cognitive, or developmental disabilities.",
+  "Indigenous Communities": "Supporting the rights, cultures, and livelihoods of Indigenous peoples worldwide.",
+  "Elderly":             "Programs serving older adults through healthcare, social connection, and economic security.",
 };
 
 // ── Filtering helpers ─────────────────────────────────────────────────────────
@@ -177,7 +180,12 @@ function applyFilters(orgs, filters) {
     for (const [key, values] of Object.entries(filters)) {
       if (!values?.length) continue;
       if (key === "org_type") {
-        if (!values.includes(org[key])) return false;
+        const orgVal = org[key] || "";
+        const match = values.some(v => {
+          if (v === "Social Enterprise") return SOCIAL_ENTERPRISE_ALIASES.has(orgVal);
+          return v === orgVal;
+        });
+        if (!match) return false;
       } else if (key === "regions") {
         const expanded = expandRegions(values);
         const orgVals  = org[key] || [];

@@ -74,7 +74,7 @@ const GroupedRegionCheck = ({ value = [], onChange }) => {
 // Impact Investing and Foundation orgs span many sub-segments by nature,
 // so sub-segment tags are only surfaced for Operator-type orgs.
 const OPERATOR_ORG_TYPES = new Set([
-  "Nonprofit", "B Corporation", "Hybrid", "Cooperative", "Government / Public Sector",
+  "Nonprofit", "Social Enterprise", "Government / Public Sector",
 ]);
 
 export default function OrgForm({ org, onSave, onCancel }) {

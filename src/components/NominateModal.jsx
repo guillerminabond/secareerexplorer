@@ -4,7 +4,7 @@ import { submitNomination } from "@/api/nominationsApi";
 import { REGION_HIERARCHY } from "@/constants/regions";
 import { validateText, isSafeUrl, isValidEmail, checkRateLimit, LIMITS } from "@/lib/security";
 
-const ORG_TYPES = ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"];
+const ORG_TYPES = ["Nonprofit", "Social Enterprise", "Impact Investing", "Foundation", "Government / Public Sector"];
 
 const CAUSE_AREAS = [
   "Poverty Alleviation", "Economic Development", "Global Health", "Education",

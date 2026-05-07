@@ -540,7 +540,11 @@ export default function Home() {
         if (!values?.length) continue;
         if (key === "org_type") {
           const orgVal = org[key] || "";
-          const match = values.some(v => orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation")));
+          const SOCIAL_ENTERPRISE_ALIASES = new Set(["B Corporation", "Hybrid", "Cooperative", "Social Enterprise"]);
+          const match = values.some(v => {
+            if (v === "Social Enterprise") return SOCIAL_ENTERPRISE_ALIASES.has(orgVal);
+            return orgVal === v || (orgVal === "Impact Investing / Foundation" && (v === "Impact Investing" || v === "Foundation"));
+          });
           if (!match) return false;
         } else if (key === "aum_range") {
           const orgAum = org.aum_range || "";

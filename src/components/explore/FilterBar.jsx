@@ -18,10 +18,10 @@ const CAUSE_SUBTOPICS = {
 
 const NON_REGION_FILTERS = {
   cause_areas:        ["Poverty Alleviation", "Economic Development", "Global Health", "Education", "Climate & Energy", "Gender & Social Justice", "Financial Inclusion", "Housing & Community", "Arts & Culture"],
-  org_type:           ["Nonprofit", "Impact Investing", "Foundation", "Hybrid", "B Corporation", "Government / Public Sector", "Cooperative"],
+  org_type:           ["Nonprofit", "Social Enterprise", "Impact Investing", "Foundation", "Government / Public Sector"],
   industry:           INDUSTRIES,
   role_types:         ["Operator", "Funder", "Enabler", "Advocacy & Policy"],
-  target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
+  target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families", "LGBTQ+", "People with Disabilities", "Indigenous Communities", "Elderly"],
 };
 
 const AUM_FILTER = { aum: ["< $10M", "$10M – $100M", "$100M – $500M", "$500M – $1B", "$1B – $10B", "> $10B"] };
