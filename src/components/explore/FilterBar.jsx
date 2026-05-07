@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { X, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { REGION_HIERARCHY, PARENT_REGIONS, getParent } from "@/constants/regions";
 import { INDUSTRIES } from "@/constants/industries";
 
-// Sub-segments keyed by cause area — mirrors CAUSE_DETAILS.subtopics in LearnMore
+// Sub-segments keyed by cause area
 const CAUSE_SUBTOPICS = {
   "Poverty Alleviation":      ["Cash Transfers", "Food Security", "Water & Sanitation", "Refugee Support", "Rural Livelihoods", "Safety Nets"],
   "Economic Development":     ["Small Business Lending", "Workforce Development", "Supply Chain Inclusion", "Rural Entrepreneurship", "Trade & Market Access", "Job Creation"],
@@ -24,8 +24,8 @@ const NON_REGION_FILTERS = {
   target_populations: ["People in Poverty", "Women & Girls", "Children", "Youth & Teenagers", "Smallholder Farmers", "Migrants & Refugees", "Families"],
 };
 
-const AUM_FILTER = { aum_range: ["< $50M", "$50M – $250M", "$250M – $1B", "$1B – $10B", "$10B+"] };
-const INVESTOR_TYPE_FILTER = { investor_types: ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"] };
+const AUM_FILTER = { aum: ["< $10M", "$10M – $100M", "$100M – $500M", "$500M – $1B", "$1B – $10B", "> $10B"] };
+const INVESTOR_TYPE_FILTER = { investor_type: ["VC", "Accelerator/Incubator", "Growth/PE", "Investment Bank", "Debt", "Multi-type"] };
 
 const LABEL_MAP = {
   cause_areas:        "Cause Areas",
@@ -33,13 +33,105 @@ const LABEL_MAP = {
   industry:           "Industry",
   role_types:         "Ecosystem Role",
   target_populations: "Target Populations",
+  regions:            "Regions",
+  aum:               "AUM",
+  investor_type:     "Investor Type",
+  cause_subtopics:   "Sub-segments",
 };
 
-// ── Hierarchical region filter ─────────────────────────────────────────────────
+// Filters that render as dropdown instead of chips
+const DROPDOWN_FILTERS = new Set(["industry", "target_populations"]);
+
+// ── Multi-select Dropdown ─────────────────────────────────────────────────────
+function MultiSelectDropdown({ label, options, selected, onToggle }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
+          selected.length > 0
+            ? "border-crimson text-crimson bg-crimson/5"
+            : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
+        }`}
+      >
+        <span className="truncate">{label}</span>
+        {selected.length > 0 && (
+          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-crimson text-white text-xs flex items-center justify-center font-medium">
+            {selected.length}
+          </span>
+        )}
+        <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+          {options.map((opt) => {
+            const isActive = selected.includes(opt);
+            return (
+              <button
+                key={opt}
+                onClick={() => onToggle(opt)}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 transition-colors ${
+                  isActive ? "text-crimson font-medium" : "text-gray-700"
+                }`}
+              >
+                <span className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center ${
+                  isActive ? "bg-crimson border-crimson" : "border-gray-300"
+                }`}>
+                  {isActive && <Check className="w-3 h-3 text-white" />}
+                </span>
+                <span className="truncate">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Accordion Section ─────────────────────────────────────────────────────────
+function AccordionSection({ title, count, isOpen, onToggle, children }) {
+  return (
+    <div className="border-b border-gray-100 last:border-b-0">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-2.5 text-left group"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider group-hover:text-gray-700 transition-colors">
+            {title}
+          </span>
+          {count > 0 && (
+            <span className="w-5 h-5 rounded-full bg-crimson text-white text-xs flex items-center justify-center font-medium">
+              {count}
+            </span>
+          )}
+        </div>
+        {isOpen
+          ? <ChevronUp className="w-4 h-4 text-gray-400" />
+          : <ChevronDown className="w-4 h-4 text-gray-400" />
+        }
+      </button>
+      {isOpen && <div className="pb-3">{children}</div>}
+    </div>
+  );
+}
+
+// ── Hierarchical region filter (nested inside accordion) ──────────────────────
 function RegionFilter({ activeRegions, onToggle }) {
-  // Track which parents are manually expanded by the user
   const [expanded, setExpanded] = useState(() => {
-    // Auto-expand parents that already have active sub-regions on mount
     const s = new Set();
     (activeRegions || []).forEach(r => {
       const p = getParent(r);
@@ -59,85 +151,120 @@ function RegionFilter({ activeRegions, onToggle }) {
   const active = activeRegions || [];
 
   return (
-    <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Regions</p>
-      <div className="space-y-2">
-        {PARENT_REGIONS.map(parent => {
-          const children      = REGION_HIERARCHY[parent];
-          const hasChildren   = children.length > 0;
-          const isParentActive   = active.includes(parent);
-          const activeChildCount = children.filter(c => active.includes(c)).length;
-          // Show sub-regions if: parent is active, user manually expanded, or a child is active
-          const isExpanded    = isParentActive || expanded.has(parent) || activeChildCount > 0;
+    <div className="space-y-2">
+      {PARENT_REGIONS.map(parent => {
+        const children      = REGION_HIERARCHY[parent];
+        const hasChildren   = children.length > 0;
+        const isParentActive   = active.includes(parent);
+        const activeChildCount = children.filter(c => active.includes(c)).length;
+        const isExpanded    = isParentActive || expanded.has(parent) || activeChildCount > 0;
 
-          return (
-            <div key={parent}>
-              {/* Parent chip + optional expand toggle */}
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => onToggle(parent)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[36px] ${
-                    isParentActive
-                      ? "bg-crimson text-white border-crimson"
-                      : activeChildCount > 0
-                      ? "bg-crimson/10 text-crimson border-crimson/40"
-                      : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
-                  }`}
-                >
-                  {parent}
-                  {/* Badge showing how many sub-regions are selected (when parent itself isn't) */}
-                  {activeChildCount > 0 && !isParentActive && (
-                    <span className="ml-1.5 text-[10px] font-semibold opacity-80">
-                      {activeChildCount}
-                    </span>
-                  )}
-                </button>
-
-                {hasChildren && (
-                  <button
-                    onClick={() => toggleExpand(parent)}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                    aria-label={isExpanded ? "Collapse sub-regions" : "Expand sub-regions"}
-                  >
-                    {isExpanded
-                      ? <ChevronUp className="w-3.5 h-3.5" />
-                      : <ChevronDown className="w-3.5 h-3.5" />
-                    }
-                  </button>
+        return (
+          <div key={parent}>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onToggle(parent)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[32px] ${
+                  isParentActive
+                    ? "bg-crimson text-white border-crimson"
+                    : activeChildCount > 0
+                    ? "bg-crimson/10 text-crimson border-crimson/40"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
+                }`}
+              >
+                {parent}
+                {activeChildCount > 0 && !isParentActive && (
+                  <span className="ml-1.5 text-[10px] font-semibold opacity-80">
+                    {activeChildCount}
+                  </span>
                 )}
-              </div>
+              </button>
 
-              {/* Sub-region chips — indented with a left border guide */}
-              {hasChildren && isExpanded && (
-                <div className="mt-1.5 ml-3 pl-3 border-l-2 border-gray-100 flex flex-wrap gap-1.5">
-                  {children.map(child => {
-                    const isChildActive = active.includes(child);
-                    return (
-                      <button
-                        key={child}
-                        onClick={() => onToggle(child)}
-                        className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs border transition-colors min-h-[30px] ${
-                          isChildActive
-                            ? "bg-crimson text-white border-crimson"
-                            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-crimson hover:text-crimson"
-                        }`}
-                      >
-                        {child}
-                      </button>
-                    );
-                  })}
-                </div>
+              {hasChildren && (
+                <button
+                  onClick={() => toggleExpand(parent)}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label={isExpanded ? "Collapse sub-regions" : "Expand sub-regions"}
+                >
+                  {isExpanded
+                    ? <ChevronUp className="w-3.5 h-3.5" />
+                    : <ChevronDown className="w-3.5 h-3.5" />
+                  }
+                </button>
               )}
             </div>
-          );
-        })}
-      </div>
+
+            {hasChildren && isExpanded && (
+              <div className="mt-1.5 ml-3 pl-3 border-l-2 border-gray-100 flex flex-wrap gap-1.5">
+                {children.map(child => {
+                  const isChildActive = active.includes(child);
+                  return (
+                    <button
+                      key={child}
+                      onClick={() => onToggle(child)}
+                      className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs border transition-colors min-h-[28px] ${
+                        isChildActive
+                          ? "bg-crimson text-white border-crimson"
+                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-crimson hover:text-crimson"
+                      }`}
+                    >
+                      {child}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Active Filter Summary Bar ─────────────────────────────────────────────────
+function FilterSummaryBar({ active, onRemove, onClearAll }) {
+  const tags = [];
+  for (const [key, values] of Object.entries(active)) {
+    if (!values?.length) continue;
+    for (const v of values) {
+      tags.push({ key, value: v });
+    }
+  }
+  if (tags.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pb-3 border-b border-gray-100 mb-1">
+      <span className="text-xs text-gray-400 font-medium mr-1">Active:</span>
+      {tags.map(({ key, value }) => (
+        <span
+          key={`${key}-${value}`}
+          className="inline-flex items-center gap-1 px-2 py-0.5 bg-crimson/10 text-crimson text-xs font-medium rounded-full border border-crimson/20"
+        >
+          <span className="max-w-[120px] truncate">{value}</span>
+          <button
+            onClick={() => onRemove(key, value)}
+            className="hover:text-crimson/70 transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+      {tags.length > 1 && (
+        <button
+          onClick={onClearAll}
+          className="text-xs text-gray-400 hover:text-gray-600 ml-1 transition-colors"
+        >
+          Clear all
+        </button>
+      )}
     </div>
   );
 }
 
 // ── Main FilterBar ─────────────────────────────────────────────────────────────
 export default function FilterBar({ active, onChange }) {
+  const [openSection, setOpenSection] = useState(null);
+
   const toggle = (key, value) => {
     const current = active[key] || [];
     const updated = current.includes(value)
@@ -157,10 +284,28 @@ export default function FilterBar({ active, onChange }) {
     if (key === "org_type") {
       const hasAumType = updated.some(v => v === "Impact Investing" || v === "Foundation");
       const hasInvestor = updated.includes("Impact Investing");
-      if (!hasAumType) delete next.aum_range;
-      if (!hasInvestor) delete next.investor_types;
+      if (!hasAumType) delete next.aum;
+      if (!hasInvestor) delete next.investor_type;
     }
 
+    onChange(next);
+  };
+
+  const removeFilter = (key, value) => {
+    const current = active[key] || [];
+    const updated = current.filter(v => v !== value);
+    let next = { ...active, [key]: updated };
+    if (key === "cause_areas") {
+      const removedSubtopics = new Set(CAUSE_SUBTOPICS[value] || []);
+      const remainingSubtopics = (active.cause_subtopics || []).filter(s => !removedSubtopics.has(s));
+      next.cause_subtopics = remainingSubtopics;
+    }
+    if (key === "org_type") {
+      const hasAumType = updated.some(v => v === "Impact Investing" || v === "Foundation");
+      const hasInvestor = updated.includes("Impact Investing");
+      if (!hasAumType) delete next.aum;
+      if (!hasInvestor) delete next.investor_type;
+    }
     onChange(next);
   };
 
@@ -182,52 +327,58 @@ export default function FilterBar({ active, onChange }) {
   const activeCauses = active.cause_areas || [];
   const availableSubtopics = activeCauses.flatMap(c => CAUSE_SUBTOPICS[c] || []);
 
-  return (
-    <div className="space-y-3">
-      {/* Non-region filters (flat chips) + conditional investor filters */}
-      {Object.entries(ACTIVE_FILTERS).map(([key, values]) => (
-        <React.Fragment key={key}>
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              {LABEL_MAP[key] || key.replace(/_/g, " ")}
-            </p>
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
-              {values.map(v => {
-                const isActive = (active[key] || []).includes(v);
-                return (
-                  <button
-                    key={v}
-                    onClick={() => toggle(key, v)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[36px] ${
-                      isActive
-                        ? "bg-crimson text-white border-crimson"
-                        : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
-                    }`}
-                  >
-                    {v}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+  const toggleSection = (section) => {
+    setOpenSection(prev => prev === section ? null : section);
+  };
 
-          {/* Sub-segment row: appears inline under Cause Areas when ≥1 cause is selected */}
-          {key === "cause_areas" && availableSubtopics.length > 0 && (
-            <div className="ml-3 pl-3 border-l-2 border-gray-100">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                Sub-segments
-              </p>
-              <div className="flex gap-1.5 overflow-x-auto pb-0.5 sm:flex-wrap scrollbar-hide">
-                {availableSubtopics.map(v => {
-                  const isActive = (active.cause_subtopics || []).includes(v);
+  const getCount = (key) => (active[key] || []).length;
+
+  return (
+    <div className="space-y-0">
+      {/* Active filter summary bar */}
+      {hasFilters && (
+        <FilterSummaryBar
+          active={active}
+          onRemove={removeFilter}
+          onClearAll={clearAll}
+        />
+      )}
+
+      {/* Accordion filter sections */}
+      {Object.entries(ACTIVE_FILTERS).map(([key, values]) => {
+        // Dropdown filters get their own compact rendering
+        if (DROPDOWN_FILTERS.has(key)) {
+          return (
+            <div key={key} className="border-b border-gray-100 py-2.5">
+              <MultiSelectDropdown
+                label={LABEL_MAP[key] || key.replace(/_/g, " ")}
+                options={values}
+                selected={active[key] || []}
+                onToggle={(v) => toggle(key, v)}
+              />
+            </div>
+          );
+        }
+
+        return (
+          <React.Fragment key={key}>
+            <AccordionSection
+              title={LABEL_MAP[key] || key.replace(/_/g, " ")}
+              count={getCount(key)}
+              isOpen={openSection === key}
+              onToggle={() => toggleSection(key)}
+            >
+              <div className="flex gap-1.5 flex-wrap">
+                {values.map(v => {
+                  const isActive = (active[key] || []).includes(v);
                   return (
                     <button
                       key={v}
-                      onClick={() => toggle("cause_subtopics", v)}
-                      className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs border transition-colors min-h-[30px] ${
+                      onClick={() => toggle(key, v)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs sm:text-sm border transition-colors min-h-[32px] ${
                         isActive
                           ? "bg-crimson text-white border-crimson"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:border-crimson hover:text-crimson"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
                       }`}
                     >
                       {v}
@@ -235,25 +386,50 @@ export default function FilterBar({ active, onChange }) {
                   );
                 })}
               </div>
-            </div>
-          )}
-        </React.Fragment>
-      ))}
 
-      {/* Hierarchical region filter */}
-      <RegionFilter
-        activeRegions={active.regions || []}
-        onToggle={(region) => toggle("regions", region)}
-      />
+              {/* Sub-segment row: appears under Cause Areas when causes are selected */}
+              {key === "cause_areas" && availableSubtopics.length > 0 && (
+                <div className="mt-3 ml-3 pl-3 border-l-2 border-gray-100">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Sub-segments
+                  </p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {availableSubtopics.map(v => {
+                      const isActive = (active.cause_subtopics || []).includes(v);
+                      return (
+                        <button
+                          key={v}
+                          onClick={() => toggle("cause_subtopics", v)}
+                          className={`flex-shrink-0 px-2.5 py-1 rounded-full text-xs border transition-colors min-h-[28px] ${
+                            isActive
+                              ? "bg-crimson text-white border-crimson"
+                              : "bg-gray-50 text-gray-500 border-gray-200 hover:border-crimson hover:text-crimson"
+                          }`}
+                        >
+                          {v}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </AccordionSection>
+          </React.Fragment>
+        );
+      })}
 
-      {hasFilters && (
-        <button
-          onClick={clearAll}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 min-h-[36px]"
-        >
-          <X className="w-3.5 h-3.5" /> Clear all filters
-        </button>
-      )}
+      {/* Regions accordion section */}
+      <AccordionSection
+        title="Regions"
+        count={getCount("regions")}
+        isOpen={openSection === "regions"}
+        onToggle={() => toggleSection("regions")}
+      >
+        <RegionFilter
+          activeRegions={active.regions || []}
+          onToggle={(region) => toggle("regions", region)}
+        />
+      </AccordionSection>
     </div>
   );
 }
