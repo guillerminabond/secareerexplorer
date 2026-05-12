@@ -121,7 +121,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
               onClick={() => setActiveFilter(tab)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5
                 ${activeFilter === tab
-                  ? "bg-[#A51C30] text-white shadow-sm"
+                  ? "bg-crimson text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
             >
               {tab}
@@ -137,7 +137,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
           <select
             value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-crimson/30"
           >
             {TYPE_OPTIONS.map(t => <option key={t}>{t}</option>)}
           </select>
@@ -149,7 +149,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
               placeholder="Search…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30 w-40"
+              className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 w-40"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
@@ -237,7 +237,7 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
                             onClick={() => toggleArchive(f.id, f.archived)}
                             className={`p-1.5 rounded transition-colors ${
                               f.archived
-                                ? "text-[#A51C30] hover:bg-red-50"
+                                ? "text-crimson hover:bg-red-50"
                                 : "text-gray-300 hover:text-gray-500 hover:bg-gray-100"
                             }`}
                             title={f.archived ? "Unarchive" : "Archive"}
@@ -301,12 +301,12 @@ export default function FeedbackTab({ feedback: initialFeedback }) {
                                   value={draftComment}
                                   onChange={e => setCommentDraft(d => ({ ...d, [f.id]: e.target.value }))}
                                   placeholder="Add a private note…"
-                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-crimson/30"
                                 />
                                 <button
                                   onClick={() => saveComment(f.id)}
                                   disabled={!commentChanged || saving[f.id]}
-                                  className="px-3 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 self-start"
+                                  className="px-3 py-2 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 self-start"
                                 >
                                   {saving[f.id]
                                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

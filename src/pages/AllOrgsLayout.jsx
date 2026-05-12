@@ -5,7 +5,7 @@ import NominateModal from "@/components/NominateModal";
 const tabClass = ({ isActive }) =>
   `my-2 px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
     isActive
-      ? "bg-[#A51C30] text-white shadow-md"
+      ? "bg-crimson text-white shadow-md"
       : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
   }`;
 

@@ -1,3 +1,1 @@
-export function createPageUrl(pageName: string) {
-    return '/' + pageName.replace(/ /g, '-');
-}
+// DELETED — this file was unused. Safe to remove from the repo.

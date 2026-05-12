@@ -22,7 +22,7 @@ export default function MainNav() {
 
   const tabCls = (active) =>
     `flex-shrink-0 my-2 px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-      active ? "bg-[#A51C30] text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+      active ? "bg-crimson text-white shadow-md" : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
     }`;
 
   return (
@@ -61,7 +61,7 @@ export default function MainNav() {
             <button
               onClick={() => setShowFeedback(true)}
               title="Send feedback"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border text-gray-400 border-gray-200 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-red-50"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all border text-gray-400 border-gray-200 hover:text-crimson hover:border-crimson/40 hover:bg-red-50"
             >
               <MessageSquare className="w-3 h-3" />
               <span className="hidden sm:inline">Feedback</span>
@@ -71,7 +71,7 @@ export default function MainNav() {
             <button
               onClick={() => setShowHowToUse(true)}
               title="How to use this platform"
-              className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 border border-gray-200 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-red-50 transition-all"
+              className="flex items-center justify-center w-7 h-7 rounded-md text-gray-400 border border-gray-200 hover:text-crimson hover:border-crimson/40 hover:bg-red-50 transition-all"
             >
               <HelpCircle className="w-3.5 h-3.5" />
             </button>

@@ -21,7 +21,7 @@ export default function LearnMorePage({ adminMode }) {
             onClick={() => setSubTab(t.key)}
             className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
               subTab === t.key
-                ? "bg-[#A51C30] text-white shadow-sm"
+                ? "bg-crimson text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             }`}
           >

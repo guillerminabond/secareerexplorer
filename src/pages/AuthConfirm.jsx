@@ -62,14 +62,14 @@ export default function AuthConfirm() {
             <p className="text-xs text-gray-500 mb-5">{error}</p>
             <a
               href="/admin"
-              className="text-xs text-[#A51C30] hover:underline"
+              className="text-xs text-crimson hover:underline"
             >
               ← Go to login
             </a>
           </>
         ) : (
           <>
-            <Loader2 className="w-8 h-8 text-[#A51C30] animate-spin mx-auto mb-3" />
+            <Loader2 className="w-8 h-8 text-crimson animate-spin mx-auto mb-3" />
             <p className="text-sm text-gray-600">Confirming your email…</p>
           </>
         )}

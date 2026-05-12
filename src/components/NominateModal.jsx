@@ -116,7 +116,7 @@ export default function NominateModal({ onClose }) {
               </p>
               <button
                 onClick={onClose}
-                className="px-6 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium"
+                className="px-6 py-2 bg-crimson text-white rounded-lg text-sm font-medium"
               >
                 Done
               </button>
@@ -127,13 +127,13 @@ export default function NominateModal({ onClose }) {
               {/* Name */}
               <div>
                 <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1 block">
-                  Organization Name <span className="text-[#A51C30]">*</span>
+                  Organization Name <span className="text-crimson">*</span>
                 </label>
                 <input
                   value={form.name}
                   onChange={e => set("name", e.target.value)}
                   placeholder="e.g. Ashoka"
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30"
                 />
               </div>
 
@@ -144,7 +144,7 @@ export default function NominateModal({ onClose }) {
                   value={form.website}
                   onChange={e => set("website", e.target.value)}
                   placeholder="https://..."
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30"
                 />
               </div>
 
@@ -156,7 +156,7 @@ export default function NominateModal({ onClose }) {
                   onChange={e => set("description", e.target.value)}
                   placeholder="What does this org do?"
                   rows={2}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30 resize-none"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30 resize-none"
                 />
               </div>
 
@@ -166,7 +166,7 @@ export default function NominateModal({ onClose }) {
                 <select
                   value={form.org_type}
                   onChange={e => set("org_type", e.target.value)}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30"
                 >
                   <option value="">Select…</option>
                   {ORG_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -185,7 +185,7 @@ export default function NominateModal({ onClose }) {
                         type="button"
                         onClick={() => toggleMulti("cause_areas", ca)}
                         className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                          active ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
+                          active ? "bg-crimson text-white border-crimson" : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
                         }`}
                       >
                         {ca}
@@ -209,7 +209,7 @@ export default function NominateModal({ onClose }) {
                             type="button"
                             onClick={() => toggleMulti("regions", parent)}
                             className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                              isActive ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
+                              isActive ? "bg-crimson text-white border-crimson" : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
                             }`}
                           >
                             {parent}
@@ -229,7 +229,7 @@ export default function NominateModal({ onClose }) {
                                 type="button"
                                 onClick={() => toggleMulti("regions", child)}
                                 className={`px-2.5 py-1 rounded-full text-xs border transition-colors ${
-                                  isActive ? "bg-[#A51C30] text-white border-[#A51C30]" : "bg-white text-gray-600 border-gray-200 hover:border-[#A51C30] hover:text-[#A51C30]"
+                                  isActive ? "bg-crimson text-white border-crimson" : "bg-white text-gray-600 border-gray-200 hover:border-crimson hover:text-crimson"
                                 }`}
                               >
                                 {child}
@@ -253,7 +253,7 @@ export default function NominateModal({ onClose }) {
                   onChange={e => set("hbs_connection", e.target.value)}
                   placeholder="e.g. HBS alumna is COO, recruits at HBS, case study written..."
                   rows={2}
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30 resize-none"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30 resize-none"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export default function NominateModal({ onClose }) {
                   value={form.submitted_by}
                   onChange={e => set("submitted_by", e.target.value)}
                   placeholder="e.g. Jane Smith or jane@hbs.edu"
-                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-crimson/30"
                 />
               </div>
 
@@ -276,7 +276,7 @@ export default function NominateModal({ onClose }) {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !form.name.trim()}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#A51C30]/90 transition-colors"
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-crimson/90 transition-colors"
               >
                 <Send className="w-4 h-4" />
                 {submitting ? "Submitting…" : "Submit Nomination"}

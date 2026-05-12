@@ -71,7 +71,7 @@ export default function UpdatePassword() {
     <div className="bg-gray-50 min-h-screen flex items-center justify-center py-24">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
         <div className="flex items-center gap-2 mb-6">
-          <Lock className="w-5 h-5 text-[#A51C30]" />
+          <Lock className="w-5 h-5 text-crimson" />
           <h1 className="text-lg font-bold text-gray-900">Set New Password</h1>
         </div>
 
@@ -94,7 +94,7 @@ export default function UpdatePassword() {
               onChange={e => { setPassword(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleSubmit()}
               autoFocus
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-crimson/30"
             />
             <input
               type="password"
@@ -102,13 +102,13 @@ export default function UpdatePassword() {
               value={confirm}
               onChange={e => { setConfirm(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleSubmit()}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-crimson/30"
             />
             {error && <p className="text-red-500 text-xs mb-3">{error}</p>}
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {loading ? "Updating…" : "Update Password"}

@@ -100,7 +100,7 @@ export default function NominationsTab({ nominations: initialNoms, onReload, onA
               onClick={() => setActiveFilter(tab)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5
                 ${activeFilter === tab
-                  ? "bg-[#A51C30] text-white shadow-sm"
+                  ? "bg-crimson text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"}`}
             >
               {tab}
@@ -120,7 +120,7 @@ export default function NominationsTab({ nominations: initialNoms, onReload, onA
               placeholder="Search by name, type…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30 w-52"
+              className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30 w-52"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500">
@@ -168,7 +168,7 @@ export default function NominationsTab({ nominations: initialNoms, onReload, onA
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={e => e.stopPropagation()}
-                              className="text-gray-300 hover:text-[#A51C30] flex-shrink-0"
+                              className="text-gray-300 hover:text-crimson flex-shrink-0"
                               title="Visit website"
                             >
                               <ExternalLink className="w-3 h-3" />

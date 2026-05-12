@@ -6,9 +6,9 @@ import {
   PieChart, Pie, Cell, Legend
 } from "recharts";
 
-const CRIMSON = "#A51C30";
+const CRIMSON = "var(--crimson, #A51C30)";
 const COLORS = [
-  "#A51C30", "#c0392b", "#e74c3c", "#e67e22", "#f39c12",
+  "var(--crimson, #A51C30)", "#c0392b", "#e74c3c", "#e67e22", "#f39c12",
   "#27ae60", "#2980b9", "#8e44ad", "#16a085", "#2c3e50"
 ];
 
@@ -16,7 +16,7 @@ const COLORS = [
 function StatCard({ label, value, sub }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 p-4 flex flex-col gap-1">
-      <p className="text-3xl font-bold text-[#A51C30]">{value}</p>
+      <p className="text-3xl font-bold text-crimson">{value}</p>
       <p className="text-sm font-semibold text-gray-800">{label}</p>
       {sub && <p className="text-xs text-gray-400">{sub}</p>}
     </div>
@@ -149,7 +149,7 @@ function NominationsQueue({ nominations, onApprove, onReject }) {
               {expanded === n.id && (
                 <div className="border-t border-gray-100 px-3 py-2.5 bg-gray-50 space-y-1 text-xs text-gray-600">
                   {n.website && <p><span className="font-semibold text-gray-500">Website:</span>{" "}
-                    <a href={n.website} target="_blank" rel="noopener noreferrer" className="text-[#A51C30] hover:underline">{n.website}</a>
+                    <a href={n.website} target="_blank" rel="noopener noreferrer" className="text-crimson hover:underline">{n.website}</a>
                   </p>}
                   {n.description && <p><span className="font-semibold text-gray-500">Description:</span> {n.description}</p>}
                   {n.cause_areas && <p><span className="font-semibold text-gray-500">Cause areas:</span> {n.cause_areas}</p>}
@@ -225,7 +225,7 @@ function FeedbackInbox({ adminMode }) {
                   <p className="text-sm text-gray-800 leading-relaxed">{item.message}</p>
                   {item.name  && <p className="mt-2"><span className="font-semibold text-gray-500">Name:</span> {item.name}</p>}
                   {item.email && <p><span className="font-semibold text-gray-500">Email:</span>{" "}
-                    <a href={`mailto:${item.email}`} className="text-[#A51C30] hover:underline">{item.email}</a>
+                    <a href={`mailto:${item.email}`} className="text-crimson hover:underline">{item.email}</a>
                   </p>}
                   <p><span className="font-semibold text-gray-500">Submitted:</span> {new Date(item.created_at).toLocaleString()}</p>
                 </div>
@@ -348,7 +348,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       return (
         <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs shadow-md">
           <p className="font-semibold text-gray-800">{payload[0].payload.name}</p>
-          <p className="text-[#A51C30]">{payload[0].value} orgs</p>
+          <p className="text-crimson">{payload[0].value} orgs</p>
           {navigate && <p className="text-gray-400 mt-0.5">Click to explore →</p>}
         </div>
       );
@@ -361,7 +361,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
       return (
         <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs shadow-md">
           <p className="font-semibold text-gray-800">{payload[0].name}</p>
-          <p className="text-[#A51C30]">{payload[0].value} orgs</p>
+          <p className="text-crimson">{payload[0].value} orgs</p>
           {navigate && <p className="text-gray-400 mt-0.5">Click to explore →</p>}
         </div>
       );
@@ -509,7 +509,7 @@ export default function OrgDashboard({ orgs, adminMode = false, nominations = []
             const maxCount = popData[0]?.count || 1;
             const intensity = count / maxCount;
             const size = intensity > 0.7 ? "text-base px-4 py-2" : intensity > 0.4 ? "text-sm px-3 py-1.5" : "text-xs px-2.5 py-1";
-            const bg = intensity > 0.7 ? "bg-[#A51C30] text-white" : intensity > 0.4 ? "bg-red-100 text-[#A51C30]" : "bg-gray-100 text-gray-600";
+            const bg = intensity > 0.7 ? "bg-crimson text-white" : intensity > 0.4 ? "bg-red-100 text-crimson" : "bg-gray-100 text-gray-600";
             return (
               <span
                 key={name}

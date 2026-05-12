@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Crimson brand token ─────────────────────────────────────── */
+:root { --crimson: #A51C30; }
+
+/* Hide scrollbars on the nav pill strip while keeping scroll functional */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Admin modal: strip min-h-screen from Admin sub-views */
+.admin-modal-content .min-h-screen { min-height: 0 !important; }
+
 @layer base {
   :root {
     --background: 0 0% 100%;

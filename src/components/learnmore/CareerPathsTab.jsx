@@ -123,25 +123,25 @@ function ResourceForm({ form, onChange, onSave, onCancel, saving }) {
         value={form.title}
         onChange={e => onChange(f => ({ ...f, title: e.target.value }))}
         placeholder="Title"
-        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#A51C30]/30"
+        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-crimson/30"
       />
       <input
         value={form.url}
         onChange={e => onChange(f => ({ ...f, url: e.target.value }))}
         placeholder="URL (https://...)"
-        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#A51C30]/30"
+        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-crimson/30"
       />
       <input
         value={form.desc}
         onChange={e => onChange(f => ({ ...f, desc: e.target.value }))}
         placeholder="Short description (optional)"
-        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-[#A51C30]/30"
+        className="w-full text-xs border border-gray-200 rounded px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-crimson/30"
       />
       <div className="flex gap-2 pt-0.5">
         <button
           onClick={onSave}
           disabled={saving || !form.title || !form.url}
-          className="flex items-center gap-1 text-xs bg-[#A51C30] text-white rounded px-2.5 py-1 disabled:opacity-50 hover:bg-[#A51C30]/90"
+          className="flex items-center gap-1 text-xs bg-crimson text-white rounded px-2.5 py-1 disabled:opacity-50 hover:bg-crimson/90"
         >
           <Check className="w-3 h-3" /> {saving ? "Saving…" : "Save"}
         </button>
@@ -243,7 +243,7 @@ export default function CareerPathsTab({ adminMode }) {
                 <div className="flex flex-wrap items-center gap-1">
                   {detail.progression.map((step, i) => (
                     <React.Fragment key={step}>
-                      <span className="text-xs bg-[#A51C30]/10 text-[#A51C30] px-2.5 py-1 rounded-full font-medium">{step}</span>
+                      <span className="text-xs bg-crimson/10 text-crimson px-2.5 py-1 rounded-full font-medium">{step}</span>
                       {i < detail.progression.length - 1 && <span className="text-gray-300 text-xs">→</span>}
                     </React.Fragment>
                   ))}
@@ -257,7 +257,7 @@ export default function CareerPathsTab({ adminMode }) {
                 <p className="text-sm font-semibold text-gray-700 mb-2">Key Skills</p>
                 <ul className="space-y-1">
                   {detail.key_skills?.map((s) => (
-                    <li key={s} className="text-xs text-gray-600 flex gap-1.5"><span className="text-[#A51C30]">•</span>{s}</li>
+                    <li key={s} className="text-xs text-gray-600 flex gap-1.5"><span className="text-crimson">•</span>{s}</li>
                   ))}
                 </ul>
               </div>
@@ -273,7 +273,7 @@ export default function CareerPathsTab({ adminMode }) {
 
             {/* HBS note */}
             <div className="bg-red-50 rounded-lg p-3">
-              <p className="text-xs font-semibold text-[#A51C30] uppercase tracking-wide mb-1">🎓 HBS Recruiting Note</p>
+              <p className="text-xs font-semibold text-crimson uppercase tracking-wide mb-1">🎓 HBS Recruiting Note</p>
               <p className="text-sm text-gray-700">{detail.hbs_note}</p>
             </div>
 
@@ -284,7 +284,7 @@ export default function CareerPathsTab({ adminMode }) {
                 {adminMode && (
                   <button
                     onClick={() => startAdd(selected.label)}
-                    className="flex items-center gap-1 text-xs text-[#A51C30] border border-[#A51C30]/30 rounded-md px-2 py-1 hover:bg-[#A51C30]/5"
+                    className="flex items-center gap-1 text-xs text-crimson border border-crimson/30 rounded-md px-2 py-1 hover:bg-crimson/5"
                   >
                     <Plus className="w-3 h-3" /> Add
                   </button>
@@ -309,7 +309,7 @@ export default function CareerPathsTab({ adminMode }) {
                           href={r.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm font-medium text-[#A51C30] hover:underline inline-flex items-center gap-1"
+                          className="text-sm font-medium text-crimson hover:underline inline-flex items-center gap-1"
                         >
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                           {r.title}
@@ -318,7 +318,7 @@ export default function CareerPathsTab({ adminMode }) {
                       </div>
                       {adminMode && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
-                          <button onClick={() => startEdit(selected.label, i)} className="text-gray-400 hover:text-[#A51C30]">
+                          <button onClick={() => startEdit(selected.label, i)} className="text-gray-400 hover:text-crimson">
                             <Pencil className="w-3 h-3" />
                           </button>
                           <button onClick={() => handleDeleteRes(selected.label, i)} className="text-gray-400 hover:text-red-500">

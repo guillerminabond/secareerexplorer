@@ -1,5 +1,4 @@
 import { Analytics } from "@vercel/analytics/react";
-import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
 import { AdminProvider } from "./contexts/AdminContext";
@@ -74,7 +73,6 @@ function App() {
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Router>
-      <Toaster />
       <Analytics />
     </QueryClientProvider>
     </AdminProvider>

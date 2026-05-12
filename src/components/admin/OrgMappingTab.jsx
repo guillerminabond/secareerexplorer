@@ -63,7 +63,7 @@ function cellStyle(count, maxCount) {
   const textDark = intensity > 0.55;
   return {
     background: `rgba(165, 28, 48, ${alpha})`,
-    color: textDark ? "#fff" : "#A51C30",
+    color: textDark ? "#fff" : "var(--crimson, #A51C30)",
     fontWeight: count > 0 ? 600 : 400,
   };
 }
@@ -139,7 +139,7 @@ export default function OrgMappingTab({ orgs }) {
             <select
               value={dim1}
               onChange={e => { if (e.target.value !== dim2) setDim1(e.target.value); }}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30"
             >
               {DIMENSIONS.map(d => (
                 <option key={d.key} value={d.key} disabled={d.key === dim2}>{d.label}</option>
@@ -154,7 +154,7 @@ export default function OrgMappingTab({ orgs }) {
             <select
               value={dim2}
               onChange={e => { if (e.target.value !== dim1) setDim2(e.target.value); }}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-crimson/30"
             >
               {DIMENSIONS.map(d => (
                 <option key={d.key} value={d.key} disabled={d.key === dim1}>{d.label}</option>
@@ -167,7 +167,7 @@ export default function OrgMappingTab({ orgs }) {
             <button
               onClick={() => { setDim1(dim2); setDim2(dim1); }}
               title="Swap rows and columns"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 hover:text-[#A51C30] hover:border-[#A51C30]/40 hover:bg-red-50 transition-all whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-500 hover:text-crimson hover:border-crimson/40 hover:bg-red-50 transition-all whitespace-nowrap"
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
               <span>Transpose</span>
@@ -285,7 +285,7 @@ export default function OrgMappingTab({ orgs }) {
                       </td>
                     );
                   })}
-                  <td className="border-l border-gray-100 px-3 py-2.5 text-center font-bold text-[#A51C30]">
+                  <td className="border-l border-gray-100 px-3 py-2.5 text-center font-bold text-crimson">
                     {orgs.length}
                   </td>
                 </tr>

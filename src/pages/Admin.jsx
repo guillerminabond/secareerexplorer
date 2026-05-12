@@ -108,7 +108,7 @@ function UsersTab() {
       <div className="max-w-md">
         <div className="bg-white rounded-2xl border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-1">
-            <UserPlus className="w-4 h-4 text-[#A51C30]" />
+            <UserPlus className="w-4 h-4 text-crimson" />
             <h2 className="text-sm font-bold text-gray-900">Create New Admin User</h2>
           </div>
           <p className="text-xs text-gray-400 mb-5">
@@ -121,7 +121,7 @@ function UsersTab() {
             value={newEmail}
             onChange={e => { setNewEmail(e.target.value); setCreateMsg(null); }}
             onKeyDown={e => e.key === "Enter" && handleCreate()}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-crimson/30"
           />
 
           {createMsg && (
@@ -133,7 +133,7 @@ function UsersTab() {
           <button
             onClick={handleCreate}
             disabled={creating}
-            className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+            className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
           >
             {creating && <Loader2 className="w-4 h-4 animate-spin" />}
             {creating ? "Sending…" : "Send Invite"}
@@ -145,7 +145,7 @@ function UsersTab() {
       <div className="bg-white rounded-2xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#A51C30]" />
+            <Users className="w-4 h-4 text-crimson" />
             <h2 className="text-sm font-bold text-gray-900">Admin Users</h2>
             {!loadingUsers && (
               <span className="text-xs text-gray-400">({users.length})</span>
@@ -341,7 +341,7 @@ export default function Admin() {
   if (authLoading) {
     return (
       <div className="bg-gray-50 flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-[#A51C30]" />
+        <Loader2 className="w-6 h-6 animate-spin text-crimson" />
       </div>
     );
   }
@@ -354,7 +354,7 @@ export default function Admin() {
 
           {/* Header */}
           <div className="flex items-center gap-2 mb-6">
-            <Lock className="w-5 h-5 text-[#A51C30]" />
+            <Lock className="w-5 h-5 text-crimson" />
             <h1 className="text-lg font-bold text-gray-900">Admin Login</h1>
           </div>
 
@@ -383,7 +383,7 @@ export default function Admin() {
             type="email"
             placeholder="Admin email"
             autoFocus
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-crimson/30"
             value={email}
             onChange={e => { setEmail(e.target.value); setLoginError(""); setMagicSent(false); }}
             onKeyDown={e => e.key === "Enter" && (loginMode === "password" ? handleLogin() : handleMagicLink())}
@@ -395,13 +395,13 @@ export default function Admin() {
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-[#A51C30]/30"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-1 focus:outline-none focus:ring-2 focus:ring-crimson/30"
                 value={pw}
                 onChange={e => { setPw(e.target.value); setLoginError(""); }}
                 onKeyDown={e => e.key === "Enter" && handleLogin()}
               />
               <div className="flex justify-end mb-4">
-                <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-[#A51C30] transition-colors">
+                <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-crimson transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -409,7 +409,7 @@ export default function Admin() {
               <button
                 onClick={handleLogin}
                 disabled={loggingIn}
-                className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
                 {loggingIn ? "Verifying…" : "Login"}
@@ -431,7 +431,7 @@ export default function Admin() {
                   </p>
                   <button
                     onClick={() => { setMagicSent(false); setLoginError(""); }}
-                    className="text-xs text-[#A51C30] hover:underline"
+                    className="text-xs text-crimson hover:underline"
                   >
                     Send again
                   </button>
@@ -445,7 +445,7 @@ export default function Admin() {
                   <button
                     onClick={handleMagicLink}
                     disabled={loggingIn}
-                    className="w-full py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="w-full py-2 bg-crimson text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {loggingIn && <Loader2 className="w-4 h-4 animate-spin" />}
                     {loggingIn ? "Sending…" : "Send magic link"}
@@ -524,7 +524,7 @@ export default function Admin() {
         {/* ── Header ── */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-[#A51C30]" />
+            <Lock className="w-4 h-4 text-crimson" />
             <h1 className="text-base font-bold text-gray-900">Admin Dashboard</h1>
           </div>
           <button
@@ -551,14 +551,14 @@ export default function Admin() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all
                   ${isActive
-                    ? "bg-[#A51C30] text-white shadow-sm"
+                    ? "bg-crimson text-white shadow-sm"
                     : "text-gray-500 hover:text-gray-800 hover:bg-white hover:border-gray-100 border border-transparent"}`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {tab.label}
                 {badge > 0 && (
                   <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center font-semibold
-                    ${isActive ? "bg-white/25 text-white" : "bg-[#A51C30] text-white"}`}>
+                    ${isActive ? "bg-white/25 text-white" : "bg-crimson text-white"}`}>
                     {badge}
                   </span>
                 )}
@@ -570,7 +570,7 @@ export default function Admin() {
           {activeTab === "orgs" && (
             <button
               onClick={() => setEditing({})}
-              className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-[#A51C30] text-white rounded-lg text-sm font-medium hover:bg-[#8e1728] transition-colors"
+              className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-crimson text-white rounded-lg text-sm font-medium hover:bg-[#8e1728] transition-colors"
             >
               <Plus className="w-4 h-4" /> Add Organization
             </button>
@@ -604,7 +604,7 @@ export default function Admin() {
                         <div className="flex items-center gap-2 justify-end">
                           <button
                             onClick={() => setEditing(org)}
-                            className="p-1.5 text-gray-400 hover:text-[#A51C30] hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-crimson hover:bg-red-50 rounded transition-colors"
                             title="Edit"
                           >
                             <Pencil className="w-3.5 h-3.5" />

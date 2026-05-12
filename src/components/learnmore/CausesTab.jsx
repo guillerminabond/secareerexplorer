@@ -261,7 +261,7 @@ export default function CausesTab() {
           >
             <div className="text-2xl mb-2">{c.emoji}</div>
             <h3 className="font-semibold text-gray-900 text-sm mb-0.5">{c.label}</h3>
-            <span className="text-xs font-medium text-[#A51C30] bg-red-50 px-2 py-0.5 rounded-full">{c.sdg}</span>
+            <span className="text-xs font-medium text-crimson bg-red-50 px-2 py-0.5 rounded-full">{c.sdg}</span>
             <p className="text-xs text-gray-500 mt-2 line-clamp-2">{c.preview}</p>
           </button>
         ))}
@@ -279,7 +279,7 @@ export default function CausesTab() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-xs font-medium text-[#A51C30] bg-red-50 px-2 py-0.5 rounded-full hover:bg-red-100 transition-colors inline-flex items-center gap-1"
+                className="text-xs font-medium text-crimson bg-red-50 px-2 py-0.5 rounded-full hover:bg-red-100 transition-colors inline-flex items-center gap-1"
               >
                 {selected.sdg} ↗
               </a>
@@ -310,7 +310,7 @@ export default function CausesTab() {
 
             {/* HBS Pathway */}
             <div className="bg-red-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-[#A51C30] uppercase tracking-wide mb-2">🎓 HBS Pathway</p>
+              <p className="text-xs font-semibold text-crimson uppercase tracking-wide mb-2">🎓 HBS Pathway</p>
               <p className="text-sm text-gray-700 mb-4 leading-relaxed">{detail.hbs_pathway.text}</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -319,7 +319,7 @@ export default function CausesTab() {
                     {detail.hbs_pathway.courses.map((c) => (
                       <div
                         key={c}
-                        className="text-xs bg-white border border-red-100 text-[#A51C30] px-2.5 py-1.5 rounded-lg leading-snug"
+                        className="text-xs bg-white border border-red-100 text-crimson px-2.5 py-1.5 rounded-lg leading-snug"
                       >
                         {c}
                       </div>
