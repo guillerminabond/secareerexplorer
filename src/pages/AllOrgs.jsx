@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, SlidersHorizontal, LayoutGrid, List, PlusCircle, Bookmark, X } from "lucide-react";
-import { fetchOrgs, updateSavesCount, deleteOrg } from "@/api/organizationsApi";
+import { deleteOrg } from "@/api/organizationsApi";
+import { useOrganizations, useInvalidateOrgs } from "@/hooks/useOrganizations";
+import { useSavedOrgs } from "@/hooks/useSavedOrgs";
 import { expandRegions } from "@/constants/regions";
 import { parseSearch, removeCondition, searchOrgs } from "@/lib/searchUtils";
 import FilterBar from "@/components/explore/FilterBar";
@@ -30,26 +32,31 @@ export default function AllOrgs() {
   const navigate = useNavigate();
   const location = useLocation();
   const { adminMode } = useAdmin();
-  const [orgs, setOrgs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingOrg, setEditingOrg] = useState(null); // null = closed, {} = new, org = editing
-  // Pre-populate filters if navigated here from the dashboard
-  const [filters, setFilters] = useState(() => location.state?.filters || {});
+  const { orgs, isLoading: loading } = useOrganizations();
+  const invalidateOrgs = useInvalidateOrgs();
+  const { savedIds, toggleSave } = useSavedOrgs();
 
-  // Store the org name to auto-open (from Learn More example links)
+  const [editingOrg, setEditingOrg] = useState(null);
+  const [filters, setFilters] = useState(() => location.state?.filters || {});
   const [pendingOrgName] = useState(() => location.state?.openOrgName || null);
 
   const pathnameRef = React.useRef(location.pathname);
   const navigateRef = React.useRef(navigate);
   navigateRef.current = navigate;
   useEffect(() => {
-    // Clear router state after consuming it so back-nav doesn't re-apply stale filters.
-    // We only want this to fire once on mount, so we read refs rather than listing
-    // location/navigate as deps (which would re-run on every navigation).
     if (location.state?.filters || location.state?.openOrgName) {
       navigateRef.current(pathnameRef.current, { replace: true, state: null });
     }
-  }, []); // intentional: runs only on mount to consume initial route state
+  }, []);
+
+  const [search, setSearch] = useState("");
+  const [selectedOrg, setSelectedOrg] = useState(null);
+  const [showFilters, setShowFilters] = useState(() => !!(location.state?.filters && Object.keys(location.state.filters).length > 0));
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [columnFilters, setColumnFilters] = useState({});
+  const [viewMode, setViewMode] = useState(() =>
+    typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
+  );
 
   // Auto-open an org modal when navigated here with openOrgName
   useEffect(() => {
@@ -60,58 +67,11 @@ export default function AllOrgs() {
       if (match) setSelectedOrg(match);
     }
   }, [pendingOrgName, orgs]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [search, setSearch] = useState("");
-  const [selectedOrg, setSelectedOrg] = useState(null);
-  const [savedIds, setSavedIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("hbs_saved_orgs") || "[]");
-    } catch {
-      return [];
-    }
-  });
-  const [showFilters, setShowFilters] = useState(() => !!(location.state?.filters && Object.keys(location.state.filters).length > 0));
-  const [showSavedOnly, setShowSavedOnly] = useState(false);
-  const [columnFilters, setColumnFilters] = useState({});
-  const [viewMode, setViewMode] = useState(() =>
-    typeof window !== "undefined" && window.innerWidth < 640 ? "grid" : "table"
-  );
-
-  const reloadOrgs = () => {
-    setLoading(true);
-    fetchOrgs()
-      .then((data) => setOrgs(data))
-      .catch((err) => console.error("Error fetching organizations:", err))
-      .finally(() => setLoading(false));
-  };
-
-  const reloadOrgsRef = React.useRef(reloadOrgs);
-  reloadOrgsRef.current = reloadOrgs;
-  useEffect(() => {
-    reloadOrgsRef.current();
-  }, []); // intentional: fetch once on mount only
-
-  const toggleSave = (id) => {
-    setSavedIds((prev) => {
-      const isCurrentlySaved = prev.includes(id);
-      const delta = isCurrentlySaved ? -1 : 1;
-      const next = isCurrentlySaved ? prev.filter((i) => i !== id) : [...prev, id];
-      localStorage.setItem("hbs_saved_orgs", JSON.stringify(next));
-      // Update server-side saves counter atomically
-      updateSavesCount(id, delta);
-      // Optimistically update local org saves count so UI reflects change immediately
-      setOrgs(prevOrgs =>
-        prevOrgs.map(o =>
-          o.id === id ? { ...o, saves: Math.max(0, (o.saves || 0) + delta) } : o
-        )
-      );
-      return next;
-    });
-  };
 
   const handleDelete = async (org) => {
     try {
       await deleteOrg(org.id);
-      setOrgs(prev => prev.filter(o => o.id !== org.id));
+      invalidateOrgs();
     } catch (err) {
       console.error("Error deleting org:", err);
     }
@@ -119,7 +79,6 @@ export default function AllOrgs() {
 
   const parsed = useMemo(() => parseSearch(search), [search]);
 
-  // Use shared searchOrgs for keyword + smart-filter matching, then layer facet filters
   const filtered = useMemo(() => {
     const searchResult = searchOrgs(orgs, search);
     const pool = searchResult.mode === "idle" ? orgs : (searchResult.results || []);
@@ -127,7 +86,6 @@ export default function AllOrgs() {
     return pool.filter((org) => {
       if (showSavedOnly && !savedIds.includes(org.id)) return false;
 
-      // FilterBar filters
       for (const [key, values] of Object.entries(filters)) {
         if (!values?.length) continue;
         if (key === "aum_range") {
@@ -155,7 +113,6 @@ export default function AllOrgs() {
         }
       }
 
-      // Column-level inline filters (additive AND with FilterBar)
       for (const [colKey, values] of Object.entries(columnFilters)) {
         if (!values?.length) continue;
         const orgVals = getValuesAsArray(org[colKey]);
@@ -222,7 +179,6 @@ export default function AllOrgs() {
           </button>
         </div>
 
-        {/* Saved filter toggle */}
         <button
           onClick={() => setShowSavedOnly(!showSavedOnly)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
@@ -238,7 +194,6 @@ export default function AllOrgs() {
           </span>
         </button>
 
-        {/* Nominate button */}
         <button
           onClick={() => navigate("/all-orgs/nominate")}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:border-crimson hover:text-crimson hover:bg-crimson/5 transition-colors"
@@ -247,7 +202,6 @@ export default function AllOrgs() {
           <span className="hidden sm:inline">Nominate</span>
         </button>
 
-        {/* Admin: Add Org button */}
         {adminMode && (
           <button
             onClick={() => setEditingOrg({})}
@@ -336,7 +290,6 @@ export default function AllOrgs() {
         <OrgModal org={selectedOrg} onClose={() => setSelectedOrg(null)} />
       )}
 
-      {/* Admin: inline OrgForm modal */}
       {editingOrg !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/40 flex items-start justify-center overflow-y-auto py-10"
@@ -357,7 +310,7 @@ export default function AllOrgs() {
             <div className="px-6 py-5">
               <OrgForm
                 org={editingOrg?.id ? editingOrg : undefined}
-                onSave={() => { setEditingOrg(null); reloadOrgs(); }}
+                onSave={() => { setEditingOrg(null); invalidateOrgs(); }}
                 onCancel={() => setEditingOrg(null)}
               />
             </div>

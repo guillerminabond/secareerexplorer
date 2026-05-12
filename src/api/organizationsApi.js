@@ -1,79 +1,15 @@
 /**
  * organizationsApi.js
  *
- * All database operations for organizations, handling the normalized
- * schema (lookup tables + junction tables) while presenting a simple
- * flat object interface to the rest of the app.
+ * Mutation operations for organizations (create, update, delete).
+ * Read/fetch operations have moved to src/hooks/useOrganizations.js
+ * which uses TanStack Query for caching and deduplication.
  *
- * The rest of the app uses orgs that look like:
- *   { id, name, org_type: "Nonprofit", cause_areas: ["Education", ...], ... }
- *
- * This module handles the join/transform complexity internally.
+ * After any mutation, callers should call invalidateOrgs() (from
+ * the useInvalidateOrgs hook) to refresh the TanStack Query cache.
  */
 
 import { supabase } from './supabaseClient'
-
-// ── Supabase select string with all joins ────────────────────
-const ORG_SELECT = `
-  id,
-  name,
-  description,
-  website,
-  size,
-  hq,
-  industry,
-  year_established,
-  hbs_note,
-  notable_alumni,
-  created_date,
-  saves,
-  badge_alumni_work_here,
-  badge_fellowship_partner,
-  badge_hbs_founder,
-  org_type:org_types(id, name),
-  employee_range:employee_ranges(id, label),
-  aum_range:aum_ranges(id, label, sort_order),
-  org_cause_areas:organization_cause_areas(cause_area:cause_areas(id, name)),
-  org_role_types:organization_role_types(role_type:role_types(id, name)),
-  org_regions:organization_regions(region:regions(id, name)),
-  org_target_populations:organization_target_populations(target_population:target_populations(id, name)),
-  org_cause_subtopics:organization_cause_subtopics(cause_subtopic:cause_subtopics(id, name)),
-  org_investor_types:organization_investor_types(investor_type:investor_types(id, name))
-`
-
-// ── Transform joined row → flat app-friendly object ─────────
-function transformOrg(row) {
-  return {
-    ...row,
-    org_type:               row.org_type?.name        ?? '',
-    org_type_id:            row.org_type?.id           ?? null,
-    employees:              row.employee_range?.label  ?? '',
-    employee_range_id:      row.employee_range?.id     ?? null,
-    aum_range:              row.aum_range?.label       ?? '',
-    aum_range_id:           row.aum_range?.id          ?? null,
-    cause_areas:            (row.org_cause_areas        ?? []).map(x => x.cause_area.name),
-    role_types:             (row.org_role_types         ?? []).map(x => x.role_type.name),
-    regions:                (row.org_regions            ?? []).map(x => x.region.name),
-    target_populations:     (row.org_target_populations ?? []).map(x => x.target_population.name),
-    cause_subtopics:        (row.org_cause_subtopics    ?? []).map(x => x.cause_subtopic.name),
-    investor_types:         (row.org_investor_types     ?? []).map(x => x.investor_type.name),
-    industry:               row.industry               ?? '',
-    // scalar fields — passed through as-is
-    saves:                  row.saves                  ?? 0,
-    badge_alumni_work_here:  row.badge_alumni_work_here  ?? false,
-    badge_fellowship_partner: row.badge_fellowship_partner ?? false,
-    badge_hbs_founder:       row.badge_hbs_founder       ?? false,
-    // remove raw join fields
-    org_cause_areas: undefined,
-    org_role_types: undefined,
-    org_regions: undefined,
-    org_target_populations: undefined,
-    org_cause_subtopics: undefined,
-    org_investor_types: undefined,
-    employee_range: undefined,
-    aum_range: undefined,
-  }
-}
 
 // ── Lookup: name → id for any lookup table ───────────────────
 async function lookupId(table, name, column = 'name') {
@@ -93,8 +29,7 @@ async function lookupIds(table, names = []) {
 // WARNING: This is a non-atomic two-step operation (delete then insert).
 // If the insert fails after a successful delete, the junction rows are lost
 // until the user saves again.  A safer approach is to wrap both statements
-// in a single Supabase RPC transaction.  Refactor to use TanStack Query +
-// an RPC when time allows.
+// in a single Supabase RPC transaction.
 async function replaceJunction(junctionTable, orgId, fkColumn, ids) {
   const { error: deleteError } = await supabase
     .from(junctionTable)
@@ -107,8 +42,6 @@ async function replaceJunction(junctionTable, orgId, fkColumn, ids) {
   const rows = ids.map(id => ({ organization_id: orgId, [fkColumn]: id }))
   const { error: insertError } = await supabase.from(junctionTable).insert(rows)
   if (insertError) {
-    // Delete already ran — junction rows are gone.  Log loudly so the caller
-    // can surface the error and prompt the user to save again.
     console.error(
       `[replaceJunction] Insert failed for ${junctionTable} (org ${orgId}) after delete. ` +
       'Data may be in an inconsistent state. Re-save to recover.',
@@ -118,65 +51,7 @@ async function replaceJunction(junctionTable, orgId, fkColumn, ids) {
   }
 }
 
-// ── In-memory cache ──────────────────────────────────────────
-// Shared across all components for the lifetime of the browser session.
-// Invalidated automatically after every mutation (create / update / delete).
-//
-// ⚠️  KNOWN RISKS — do not expand this pattern; prefer TanStack Query instead:
-//   1. Stale across HMR: Vite hot-module replacement does NOT reset module-level
-//      variables, so during development _orgsCache persists across file saves and
-//      can serve stale data until a full page reload.
-//   2. Breaks tests: unit/integration tests that import this module in the same
-//      process will share cache state across test cases, causing flaky failures.
-//   3. No React Suspense / error-boundary integration.
-//
-// TODO: Replace with TanStack Query's cache (useQuery / QueryClient) when
-//       refactoring.  TanStack handles deduplication, background revalidation,
-//       TTL, and test isolation automatically.
-let _orgsCache  = null   // { data: Org[], ts: number } | null
-let _orgsFlight = null   // in-flight Promise (deduplicate simultaneous callers)
-const ORGS_TTL  = 3 * 60 * 1000  // 3 minutes
-
-/** Force the next fetchOrgs() call to hit the database */
-export function invalidateOrgsCache() {
-  _orgsCache  = null
-  _orgsFlight = null
-}
-
 // ── PUBLIC API ───────────────────────────────────────────────
-
-/**
- * Fetch all organizations (flat, app-friendly format).
- * Results are cached for 3 minutes.  Concurrent callers within the same
- * tick share one in-flight request instead of issuing duplicate queries.
- */
-export async function fetchOrgs() {
-  // 1. Serve from cache if still fresh
-  if (_orgsCache && (Date.now() - _orgsCache.ts) < ORGS_TTL) {
-    return _orgsCache.data
-  }
-  // 2. Deduplicate: if another caller already fired the request, piggyback
-  if (_orgsFlight) return _orgsFlight
-
-  // 3. Fire the request and cache the result
-  _orgsFlight = supabase
-    .from('organizations')
-    .select(ORG_SELECT)
-    .order('name', { ascending: true })
-    .then(({ data, error }) => {
-      _orgsFlight = null
-      if (error) throw error
-      const result = (data ?? []).map(transformOrg)
-      _orgsCache = { data: result, ts: Date.now() }
-      return result
-    })
-    .catch(err => {
-      _orgsFlight = null   // don't cache errors
-      throw err
-    })
-
-  return _orgsFlight
-}
 
 /** Create a new organization */
 export async function createOrg(form) {
@@ -210,7 +85,6 @@ export async function createOrg(form) {
 
   const orgId = data.id
   await _saveJunctions(orgId, form)
-  invalidateOrgsCache()
   return orgId
 }
 
@@ -243,7 +117,6 @@ export async function updateOrg(id, form) {
   if (error) throw error
 
   await _saveJunctions(id, form)
-  invalidateOrgsCache()
 }
 
 /**
@@ -260,7 +133,6 @@ export async function updateSavesCount(orgId, delta) {
 export async function deleteOrg(id) {
   const { error } = await supabase.from('organizations').delete().eq('id', id)
   if (error) throw error
-  invalidateOrgsCache()
 }
 
 /** Fetch all lookup table options (for dropdowns / filters) */
@@ -286,7 +158,6 @@ export async function fetchLookups() {
     employee_ranges:    (empRanges.data    ?? []).map(r => r.label),
     aum_ranges:         (aumRanges.data    ?? []).map(r => r.label),
     investor_types:     (investorTypes.data ?? []).map(r => r.name),
-    // cause_subtopics grouped by cause area name for easy lookup in forms/filters
     cause_subtopics_by_cause: (causeSubtopics.data ?? []).reduce((acc, r) => {
       const cause = r.cause_area?.name;
       if (!cause) return acc;

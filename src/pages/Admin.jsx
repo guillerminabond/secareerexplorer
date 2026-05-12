@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { fetchOrgs, deleteOrg } from "@/api/organizationsApi";
+import { deleteOrg } from "@/api/organizationsApi";
+import { useOrganizations, useInvalidateOrgs } from "@/hooks/useOrganizations";
 import { fetchNominations, updateNominationStatus } from "@/api/nominationsApi";
 import { fetchFeedback } from "@/api/feedbackApi";
 import OrgForm from "@/components/admin/OrgForm";
@@ -260,11 +261,11 @@ export default function Admin() {
   const [magicSent,    setMagicSent]    = useState(false);
   const [activeTab,    setActiveTab]    = useState("orgs");
 
-  // Data state
-  const [orgs,         setOrgs]         = useState([]);
+  // Data state — orgs via TanStack Query, nominations/feedback manual
+  const { orgs, isLoading: loadingOrgs } = useOrganizations();
+  const invalidateOrgs = useInvalidateOrgs();
   const [nominations,  setNominations]  = useState([]);
   const [feedback,     setFeedback]     = useState([]);
-  const [loadingOrgs,  setLoadingOrgs]  = useState(true);
   const [loadingNoms,  setLoadingNoms]  = useState(true);
   const [loadingFb,    setLoadingFb]    = useState(true);
 
@@ -300,13 +301,6 @@ export default function Admin() {
     else { setMagicSent(true); }
   };
 
-  const loadOrgs = async () => {
-    setLoadingOrgs(true);
-    try { const data = await fetchOrgs(); setOrgs(data); }
-    catch (err) { console.error("Error loading organizations:", err); }
-    finally { setLoadingOrgs(false); }
-  };
-
   const loadNominations = async () => {
     setLoadingNoms(true);
     try { const data = await fetchNominations(); setNominations(data); }
@@ -323,7 +317,6 @@ export default function Admin() {
 
   useEffect(() => {
     if (adminMode) {
-      loadOrgs();
       loadNominations();
       loadFeedback();
     }
@@ -333,14 +326,14 @@ export default function Admin() {
     try { await deleteOrg(id); }
     catch (err) { console.error("Error deleting org:", err); }
     setDeleting(null);
-    loadOrgs();
+    invalidateOrgs();
   };
 
   const handleApproveAfterSave = async (nomId) => {
     try { await updateNominationStatus(nomId, "approved"); }
     catch (err) { console.error("Error marking nomination approved:", err); }
     setApprovingNom(null);
-    loadOrgs();
+    invalidateOrgs();
     loadNominations();
   };
 
@@ -478,7 +471,7 @@ export default function Admin() {
           <div className="bg-white rounded-2xl border border-gray-100 p-6">
             <OrgForm
               org={editing.id ? editing : null}
-              onSave={() => { setEditing(null); loadOrgs(); }}
+              onSave={() => { setEditing(null); invalidateOrgs(); }}
               onCancel={() => setEditing(null)}
             />
           </div>

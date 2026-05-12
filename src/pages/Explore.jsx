@@ -1,40 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { fetchOrgs } from "@/api/organizationsApi";
+import React from "react";
+import { useOrganizations } from "@/hooks/useOrganizations";
+import { useSavedOrgs } from "@/hooks/useSavedOrgs";
 import QuizExplore from "@/components/explore/QuizExplore";
 
 export default function Explore() {
-  const [orgs, setOrgs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savedIds, setSavedIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("hbs_saved_orgs") || "[]");
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    fetchOrgs()
-      .then((data) => setOrgs(data))
-      .catch((err) => console.error("Error fetching organizations:", err))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const toggleSave = (id) => {
-    setSavedIds((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((i) => i !== id)
-        : [...prev, id];
-      localStorage.setItem("hbs_saved_orgs", JSON.stringify(next));
-      return next;
-    });
-  };
+  const { orgs, isLoading } = useOrganizations();
+  const { savedIds, toggleSave } = useSavedOrgs();
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-screen-2xl mx-auto px-6 py-6">
-        {loading ? (
-          /* Skeleton cards — matches the grid layout used in QuizExplore results */
+        {isLoading ? (
           <div className="max-w-2xl mx-auto py-8 space-y-4">
             <div className="h-8 bg-gray-100 rounded-xl w-2/3 mx-auto animate-pulse" />
             <div className="h-4 bg-gray-100 rounded w-1/2 mx-auto animate-pulse" />

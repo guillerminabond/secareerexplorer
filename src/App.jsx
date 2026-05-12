@@ -3,12 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClientInstance } from "@/lib/query-client";
 import { AdminProvider } from "./contexts/AdminContext";
-import { pagesConfig } from "./pages.config";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import PageNotFound from "./lib/PageNotFound";
+import Layout from "./Layout";
+import Explore from "./pages/Explore";
 import AllOrgsLayout from "./pages/AllOrgsLayout";
 import AllOrgs from "./pages/AllOrgs";
-import Nominate from "./pages/Nominate";
 import Dashboard from "./pages/Dashboard";
 import LearnMore from "./pages/LearnMore";
 import Resources from "./pages/Resources";
@@ -18,102 +18,55 @@ import UpdatePassword from "./pages/UpdatePassword";
 import ForgotPassword from "./pages/ForgotPassword";
 import AuthConfirm from "./pages/AuthConfirm";
 
-const { Pages, Layout, mainPage } = pagesConfig;
-const mainPageKey = mainPage ?? Object.keys(Pages)[0];
-const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
-
-const LayoutWrapper = ({ children, currentPageName }) =>
-  Layout ? (
-    <Layout currentPageName={currentPageName}>{children}</Layout>
-  ) : (
-    <>{children}</>
-  );
-
 function App() {
   return (
     <AdminProvider>
     <QueryClientProvider client={queryClientInstance}>
       <Router>
         <Routes>
-          {/* ── Home (main page) ──────────────────────────────── */}
+          {/* ── "/" redirects to Explore ──────────────────────── */}
+          <Route path="/" element={<Navigate to="/explore" replace />} />
+
+          {/* ── Explore (main page) ──────────────────────────── */}
           <Route
-            path="/"
+            path="/explore"
             element={
-              <LayoutWrapper currentPageName={mainPageKey}>
-                <MainPage />
-              </LayoutWrapper>
+              <Layout><Explore /></Layout>
             }
           />
-
-          {/* ── Dynamic pages from pagesConfig ───────────────── */}
-          {Object.entries(Pages).map(([path, Page]) => (
-            <Route
-              key={path}
-              path={`/${path}`}
-              element={
-                <LayoutWrapper currentPageName={path}>
-                  <Page />
-                </LayoutWrapper>
-              }
-            />
-          ))}
 
           {/* ── All Organizations (nested layout) ────────────── */}
           <Route
             path="/all-orgs"
             element={
-              <LayoutWrapper currentPageName="All Organizations">
-                <AllOrgsLayout />
-              </LayoutWrapper>
+              <Layout><AllOrgsLayout /></Layout>
             }
           >
-            {/* /all-orgs → redirect to /all-orgs/database */}
             <Route index element={<Navigate to="/all-orgs/database" replace />} />
             <Route path="database"  element={<AllOrgs />} />
             <Route path="dashboard" element={<Dashboard />} />
-            {/* nominate renders the database view as backdrop + a modal overlay */}
             <Route path="nominate"  element={<AllOrgs />} />
           </Route>
 
           {/* ── Standalone pages ─────────────────────────────── */}
           <Route
             path="/learn-more"
-            element={
-              <LayoutWrapper currentPageName="Learn More">
-                <LearnMore />
-              </LayoutWrapper>
-            }
+            element={<Layout><LearnMore /></Layout>}
           />
           <Route
             path="/resources"
-            element={
-              <LayoutWrapper currentPageName="Resources">
-                <Resources />
-              </LayoutWrapper>
-            }
+            element={<Layout><Resources /></Layout>}
           />
-
-          {/* ── How to Use ───────────────────────────────────── */}
           <Route
             path="/how-to-use"
-            element={
-              <LayoutWrapper currentPageName="How to Use">
-                <HowToUse />
-              </LayoutWrapper>
-            }
+            element={<Layout><HowToUse /></Layout>}
           />
-
-          {/* ── Admin ────────────────────────────────────────── */}
           <Route
             path="/admin"
-            element={
-              <LayoutWrapper currentPageName="Admin">
-                <Admin />
-              </LayoutWrapper>
-            }
+            element={<Layout><Admin /></Layout>}
           />
 
-          {/* ── Auth flows ──────────────────────────────────────── */}
+          {/* ── Auth flows ──────────────────────────────────── */}
           <Route path="/auth/confirm"     element={<AuthConfirm />} />
           <Route path="/update-password"  element={<UpdatePassword />} />
           <Route path="/forgot-password"  element={<ForgotPassword />} />
