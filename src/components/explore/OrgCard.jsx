@@ -58,6 +58,10 @@ export default function OrgCard({ org, saved, onSave, onClick, onEdit, onDelete 
         </div>
       }
 
+      {org.aum_range && (
+        <p className="text-[10px] text-gray-500 mt-2 font-medium">💰 AUM: {org.aum_range}</p>
+      )}
+
       {org.saves > 0 && (
         <p className="text-[10px] text-gray-400 mt-2">
           {org.saves} student{org.saves !== 1 ? "s" : ""} saved this
