@@ -58,7 +58,8 @@ function transformOrg(row) {
     org_cause_subtopics: undefined,
     org_investor_types: undefined,
     employee_range: undefined,
-    aum_range: undefined,
+    // note: aum_range is intentionally NOT cleared here —
+    // it's been repurposed above to hold the label string
   };
 }
 
